@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { RoomPricePeriod } from './room.types';
+import { CreateRoomRequestDto } from './dto/create.room.dto';
 
 @Controller('room')
 export class RoomController {
@@ -17,8 +18,8 @@ export class RoomController {
   }
 
   @Post()
-  async create(@Body() payload: any) {
-    return await this.roomService.create(payload);
+  async create(@Body() body: CreateRoomRequestDto) {
+    return await this.roomService.create(body);
   }
 
   // @Patch(':id')

@@ -27,11 +27,14 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
     "date-fns": "^4.1.0",
+    "hmgs-contracts": "github:MaksimAv/hmgs-contracts",
     "lodash": "^4.17.21",
+    "nestjs-zod": "^4.2.1",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

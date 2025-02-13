@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Room } from './entities/room.entity';
 import { RoomPricePeriod } from './room.types';
 import { RoomPrice } from './entities/room.price.entity';
+import { CreateRoomRequestDto } from './dto/create.room.dto';
 
 @Injectable()
 export class RoomService {
@@ -28,7 +29,7 @@ export class RoomService {
     return this.roomRepository;
   }
 
-  async create(payload: Room) {
+  async create(payload: CreateRoomRequestDto) {
     const newRoom = this.roomRepository.create({
       title: payload.title,
       description: payload.description,
@@ -39,6 +40,11 @@ export class RoomService {
       currencyCode: payload.currencyCode,
       visibility: 'PRIVATE',
       categoryId: payload.categoryId,
+      floor: payload.floor,
+      cleaningStatus: 'CLEAN',
+      minStayDays: payload.minStayDays,
+      maxStayDays: payload.maxStayDays,
+      size: payload.size,
     });
 
     return await newRoom.save();
