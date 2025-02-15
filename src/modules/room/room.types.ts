@@ -1,1 +1,1 @@
-export type RoomPricePeriod = { startDate: Date; endDate: Date };
+export type RoomDatesPeriod = { startDate: Date; endDate: Date };

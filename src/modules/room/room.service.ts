@@ -9,9 +9,12 @@ import { addDays, formatISO, isAfter, isBefore, subDays } from 'date-fns';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Room } from './entities/room.entity';
-import { RoomPricePeriod } from './room.types';
+import { RoomDatesPeriod } from './room.types';
 import { RoomPrice } from './entities/room.price.entity';
-import { CreateRoomRequestDto } from './dto/create.room.dto';
+import { CreateRoomDto } from './dto/create.room.dto';
+import { RoomStatusEnum } from './room.status.enum';
+import { RoomVisibilityEnum } from './room.visibility.enum';
+import { RoomStatus } from './entities/room.status.entity';
 
 @Injectable()
 export class RoomService {
@@ -23,28 +26,32 @@ export class RoomService {
 
     @InjectRepository(RoomPrice)
     private readonly roomPriceRepository: Repository<RoomPrice>,
+
+    @InjectRepository(RoomStatus)
+    private readonly roomStatusRepository: Repository<RoomStatus>,
   ) {}
 
   getRepository(): Repository<Room> {
     return this.roomRepository;
   }
 
-  async create(payload: CreateRoomRequestDto) {
+  async create(payload: CreateRoomDto) {
     const newRoom = this.roomRepository.create({
       title: payload.title,
-      description: payload.description,
-      status: 'INACTIVE',
-      capacity: payload.capacity,
       slug: payload.slug,
-      regularPrice: payload.regularPrice,
-      currencyCode: payload.currencyCode,
-      visibility: 'PRIVATE',
+      description: payload.description,
+      capacity: payload.capacity,
       categoryId: payload.categoryId,
       floor: payload.floor,
+      size: payload.size,
       cleaningStatus: 'CLEAN',
       minStayDays: payload.minStayDays,
       maxStayDays: payload.maxStayDays,
-      size: payload.size,
+      visibility: RoomVisibilityEnum.PRIVATE,
+      regularPrice: payload.regularPrice,
+      currencyCode: payload.currencyCode,
+      regularStatus: RoomStatusEnum.OUT_OF_ORDER,
+      isAvailable: false,
     });
 
     return await newRoom.save();
@@ -61,13 +68,13 @@ export class RoomService {
   }
 
   async isExistById(id: number): Promise<boolean> {
-    const room = await this.roomRepository.find({ where: { id } });
+    const room = await this.roomRepository.findOne({ where: { id } });
     return Boolean(room);
   }
 
   async getRoomPriceByPeriod(
     roomId: number,
-    period: RoomPricePeriod,
+    period: RoomDatesPeriod,
   ): Promise<RoomPrice[]> {
     return await this.roomPriceRepository
       .createQueryBuilder('price')
@@ -79,21 +86,20 @@ export class RoomService {
       .getMany();
   }
 
-  async getRoomPriceByDate(
-    roomId: number,
-    date: Date,
-  ): Promise<RoomPrice[] | null> {
-    return await this.roomPriceRepository
+  async getRoomPriceByDate(roomId: number, date: Date): Promise<RoomPrice> {
+    const price = await this.roomPriceRepository
       .createQueryBuilder('price')
       .where('price.roomId = :roomId', { roomId })
       .andWhere('price.startDate <= :date', { date })
       .andWhere('price.endDate >= :date', { date })
-      .getMany();
+      .getOne();
+    if (!price) throw new NotFoundException();
+    return price;
   }
 
   async setRoomPrice(
     roomId: number,
-    period: RoomPricePeriod,
+    period: RoomDatesPeriod,
     price: number,
   ): Promise<void> {
     const isRoomExist = await this.isExistById(roomId);
@@ -124,9 +130,24 @@ export class RoomService {
     }
   }
 
+  async setRoomStatus(
+    roomId: number,
+    period: RoomDatesPeriod,
+    status: RoomStatusEnum,
+  ) {
+    const newStatus = this.roomStatusRepository.create({
+      room: { id: roomId },
+      startDateTime: period.startDate,
+      endDateTime: period.endDate,
+      status,
+    });
+
+    await newStatus.save();
+  }
+
   private async getOverlapRoomPrice(
     roomId: number,
-    period: RoomPricePeriod,
+    period: RoomDatesPeriod,
     manager: EntityManager,
   ) {
     return await manager.getRepository(RoomPrice).find({
@@ -141,7 +162,7 @@ export class RoomService {
 
   private async splitOverlapRoomPrice(
     exist: RoomPrice,
-    newPeriod: RoomPricePeriod,
+    newPeriod: RoomDatesPeriod,
     manager: EntityManager,
   ) {
     const roomId = exist.roomId;
@@ -162,12 +183,12 @@ export class RoomService {
     ) {
       const newBeforePeriod = this.roomPriceRepository.create({
         ...exist,
-        endDate: subDays(newPeriod.startDate, 1),
+        endDate: formatISO(subDays(newPeriod.startDate, 1)),
         room: { id: roomId },
       });
       const newAfterPeriod = this.roomPriceRepository.create({
         ...exist,
-        startDate: addDays(newPeriod.endDate, 1),
+        startDate: formatISO(addDays(newPeriod.endDate, 1)),
         room: { id: roomId },
       });
       await manager.save([newBeforePeriod, newAfterPeriod]);
@@ -178,7 +199,7 @@ export class RoomService {
     if (isBefore(exist.startDate, newPeriod.startDate)) {
       const before = this.roomPriceRepository.create({
         ...exist,
-        endDate: subDays(newPeriod.startDate, 1),
+        endDate: formatISO(subDays(newPeriod.startDate, 1)),
         room: { id: roomId },
       });
       await manager.save(before);
@@ -189,7 +210,7 @@ export class RoomService {
     if (isAfter(exist.endDate, newPeriod.endDate)) {
       const after = this.roomPriceRepository.create({
         ...exist,
-        startDate: addDays(newPeriod.endDate, 1),
+        startDate: formatISO(addDays(newPeriod.endDate, 1)),
         room: { id: roomId },
       });
       await manager.save(after);
@@ -199,14 +220,14 @@ export class RoomService {
 
   private async createRoomPrice(
     roomId: number,
-    newPeriod: RoomPricePeriod,
+    newPeriod: RoomDatesPeriod,
     newPrice: number,
     manager: EntityManager,
   ) {
     const newRoomPrice = this.roomPriceRepository.create({
       room: { id: roomId },
-      startDate: formatISO(newPeriod.startDate),
-      endDate: formatISO(newPeriod.endDate),
+      startDate: newPeriod.startDate,
+      endDate: newPeriod.endDate,
       price: newPrice,
     });
     return await manager.save(newRoomPrice);
