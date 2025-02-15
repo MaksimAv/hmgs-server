@@ -5,7 +5,7 @@ import {
   BaseEntity,
   OneToMany,
 } from 'typeorm';
-import { Room } from './room.entity';
+import { Room } from 'src/modules/room/entities/room.entity';
 
 @Entity()
 export class RoomCategory extends BaseEntity {

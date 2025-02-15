@@ -7,8 +7,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { RoomCategory } from 'src/modules/room-category/entities/room.category.entity';
 import { RoomPrice } from './room.price.entity';
-import { RoomCategory } from './room.category.entity';
 import { RoomStatus } from './room.status.entity';
 import { RoomStatusEnum } from '../enums/room.status.enum';
 
