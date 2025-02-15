@@ -1,3 +1,4 @@
+import { InjectRepository } from '@nestjs/typeorm';
 import {
   DataSource,
   EntityManager,
@@ -5,72 +6,21 @@ import {
   MoreThanOrEqual,
   Repository,
 } from 'typeorm';
-import { addDays, formatISO, isAfter, isBefore, subDays } from 'date-fns';
+import { RoomPrice } from '../entities/room.price.entity';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Room } from './entities/room.entity';
-import { RoomDatesPeriod } from './room.types';
-import { RoomPrice } from './entities/room.price.entity';
-import { CreateRoomDto } from './dto/create.room.dto';
-import { RoomStatusEnum } from './room.status.enum';
-import { RoomVisibilityEnum } from './room.visibility.enum';
-import { RoomStatus } from './entities/room.status.entity';
+import { RoomDatesPeriod } from '../types/room.types';
+import { addDays, formatISO, isAfter, isBefore, subDays } from 'date-fns';
+import { RoomService } from './room.service';
 
 @Injectable()
-export class RoomService {
+export class RoomPriceService {
   constructor(
     private readonly dataSource: DataSource,
-
-    @InjectRepository(Room)
-    private readonly roomRepository: Repository<Room>,
+    private readonly roomService: RoomService,
 
     @InjectRepository(RoomPrice)
     private readonly roomPriceRepository: Repository<RoomPrice>,
-
-    @InjectRepository(RoomStatus)
-    private readonly roomStatusRepository: Repository<RoomStatus>,
   ) {}
-
-  getRepository(): Repository<Room> {
-    return this.roomRepository;
-  }
-
-  async create(payload: CreateRoomDto) {
-    const newRoom = this.roomRepository.create({
-      title: payload.title,
-      slug: payload.slug,
-      description: payload.description,
-      capacity: payload.capacity,
-      categoryId: payload.categoryId,
-      floor: payload.floor,
-      size: payload.size,
-      cleaningStatus: 'CLEAN',
-      minStayDays: payload.minStayDays,
-      maxStayDays: payload.maxStayDays,
-      visibility: RoomVisibilityEnum.PRIVATE,
-      regularPrice: payload.regularPrice,
-      currencyCode: payload.currencyCode,
-      regularStatus: RoomStatusEnum.OUT_OF_ORDER,
-      isAvailable: false,
-    });
-
-    return await newRoom.save();
-  }
-
-  async getOneById(id: number): Promise<Room | null> {
-    const room = this.roomRepository.findOne({ where: { id } });
-    return room;
-  }
-
-  async getMany(): Promise<Room[]> {
-    const rooms = this.roomRepository.find();
-    return rooms;
-  }
-
-  async isExistById(id: number): Promise<boolean> {
-    const room = await this.roomRepository.findOne({ where: { id } });
-    return Boolean(room);
-  }
 
   async getRoomPriceByPeriod(
     roomId: number,
@@ -102,7 +52,7 @@ export class RoomService {
     period: RoomDatesPeriod,
     price: number,
   ): Promise<void> {
-    const isRoomExist = await this.isExistById(roomId);
+    const isRoomExist = await this.roomService.isExistById(roomId);
     if (!isRoomExist) throw new NotFoundException();
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -128,21 +78,6 @@ export class RoomService {
     } finally {
       await queryRunner.release();
     }
-  }
-
-  async setRoomStatus(
-    roomId: number,
-    period: RoomDatesPeriod,
-    status: RoomStatusEnum,
-  ) {
-    const newStatus = this.roomStatusRepository.create({
-      room: { id: roomId },
-      startDateTime: period.startDate,
-      endDateTime: period.endDate,
-      status,
-    });
-
-    await newStatus.save();
   }
 
   private async getOverlapRoomPrice(

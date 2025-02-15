@@ -8,7 +8,7 @@ import {
   RelationId,
 } from 'typeorm';
 import { Room } from './room.entity';
-import { RoomStatusEnum } from '../room.status.enum';
+import { RoomStatusEnum } from '../enums/room.status.enum';
 
 @Entity()
 export class RoomStatus extends BaseEntity {

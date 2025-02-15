@@ -10,7 +10,7 @@ import {
 import { RoomPrice } from './room.price.entity';
 import { RoomCategory } from './room.category.entity';
 import { RoomStatus } from './room.status.entity';
-import { RoomStatusEnum } from '../room.status.enum';
+import { RoomStatusEnum } from '../enums/room.status.enum';
 
 // TODO: RoomAmenity - included in the price, for example: wifi, pool, air conditioning.
 // TODO: RoomFeatures - things that can be purchased for a some price, such as breakfast, bathhouse

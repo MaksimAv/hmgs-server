@@ -1,4 +1,4 @@
 export enum RoomVisibilityEnum {
-  ON_PAGE = 'ON_PAGE',
+  PUBLIC = 'PUBLIC',
   PRIVATE = 'PRIVATE',
 }

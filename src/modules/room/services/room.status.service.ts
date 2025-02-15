@@ -1,0 +1,160 @@
+import { InjectRepository } from '@nestjs/typeorm';
+import {
+  DataSource,
+  Repository,
+  EntityManager,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+} from 'typeorm';
+import { RoomStatus } from '../entities/room.status.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { RoomDatesPeriod } from '../types/room.types';
+import { RoomStatusEnum } from '../enums/room.status.enum';
+import { addMinutes, formatISO, isAfter, isBefore, subMinutes } from 'date-fns';
+import { RoomService } from './room.service';
+
+@Injectable()
+export class RoomStatusService {
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly roomService: RoomService,
+
+    @InjectRepository(RoomStatus)
+    private readonly roomStatusRepository: Repository<RoomStatus>,
+  ) {}
+
+  async getRoomStatusByPeriod(
+    roomId: number,
+    period: RoomDatesPeriod,
+  ): Promise<RoomStatus[]> {
+    return await this.roomStatusRepository
+      .createQueryBuilder('status')
+      .where('status.roomId = :roomId', { roomId })
+      .andWhere(
+        '(status.startDateTime <= :end AND status.endDateTime >= :start)',
+        { start: period.startDate, end: period.endDate },
+      )
+      .getMany();
+  }
+
+  async setRoomStatus(
+    roomId: number,
+    period: RoomDatesPeriod,
+    status: RoomStatusEnum,
+  ): Promise<void> {
+    const isRoomExist = await this.roomService.isExistById(roomId);
+    if (!isRoomExist) throw new NotFoundException();
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const overlaps = await this.getOverlapRoomStatus(
+        roomId,
+        period,
+        queryRunner.manager,
+      );
+
+      for (const overlap of overlaps) {
+        await this.splitOverlapRoomStatus(overlap, period, queryRunner.manager);
+      }
+
+      await this.createRoomStatus(roomId, period, status, queryRunner.manager);
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private async getOverlapRoomStatus(
+    roomId: number,
+    period: RoomDatesPeriod,
+    manager: EntityManager,
+  ) {
+    return await manager.getRepository(RoomStatus).find({
+      where: {
+        room: { id: roomId },
+        startDateTime: LessThanOrEqual(period.endDate),
+        endDateTime: MoreThanOrEqual(period.startDate),
+      },
+      relations: { room: true },
+    });
+  }
+
+  private async splitOverlapRoomStatus(
+    exist: RoomStatus,
+    newPeriod: RoomDatesPeriod,
+    manager: EntityManager,
+  ) {
+    const roomId = exist.roomId;
+    await manager.remove(exist);
+
+    // existStartDateTime > newStartDateTime and existEndDateTime < newEndDateTime
+    if (
+      isAfter(exist.startDateTime, newPeriod.startDate) &&
+      isBefore(exist.endDateTime, newPeriod.endDate)
+    ) {
+      return;
+    }
+
+    // existStartDateTime < newStartDateTime and existEndDateTime > newEndDateTime
+    if (
+      isBefore(exist.startDateTime, newPeriod.startDate) &&
+      isAfter(exist.endDateTime, newPeriod.endDate)
+    ) {
+      const newBeforePeriod = this.roomStatusRepository.create({
+        ...exist,
+        endDateTime: formatISO(subMinutes(newPeriod.startDate, 1)),
+        room: { id: roomId },
+      });
+      const newAfterPeriod = this.roomStatusRepository.create({
+        ...exist,
+        startDateTime: formatISO(addMinutes(newPeriod.endDate, 1)),
+        room: { id: roomId },
+      });
+      await manager.save([newBeforePeriod, newAfterPeriod]);
+      return;
+    }
+
+    // existStartDateTime < newStartDateTime
+    if (isBefore(exist.startDateTime, newPeriod.startDate)) {
+      const before = this.roomStatusRepository.create({
+        ...exist,
+        endDateTime: formatISO(subMinutes(newPeriod.startDate, 1)),
+        room: { id: roomId },
+      });
+      await manager.save(before);
+      return;
+    }
+
+    // existStartDateTime > newEndDateTime
+    if (isAfter(exist.endDateTime, newPeriod.endDate)) {
+      const after = this.roomStatusRepository.create({
+        ...exist,
+        startDateTime: formatISO(addMinutes(newPeriod.endDate, 1)),
+        room: { id: roomId },
+      });
+      await manager.save(after);
+      return;
+    }
+  }
+
+  private async createRoomStatus(
+    roomId: number,
+    newPeriod: RoomDatesPeriod,
+    newStatus: RoomStatusEnum,
+    manager: EntityManager,
+  ) {
+    const newRoomStatus = this.roomStatusRepository.create({
+      room: { id: roomId },
+      startDateTime: newPeriod.startDate,
+      endDateTime: newPeriod.endDate,
+      status: newStatus,
+    });
+    return await manager.save(newRoomStatus);
+  }
+}
