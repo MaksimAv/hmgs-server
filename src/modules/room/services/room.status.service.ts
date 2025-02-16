@@ -12,6 +12,7 @@ import { RoomDatesPeriod } from '../types/room.types';
 import { RoomStatusEnum } from '../enums/room.status.enum';
 import { addMinutes, formatISO, isAfter, isBefore, subMinutes } from 'date-fns';
 import { RoomService } from './room.service';
+import { Room } from '../entities/room.entity';
 
 @Injectable()
 export class RoomStatusService {
@@ -19,11 +20,70 @@ export class RoomStatusService {
     private readonly dataSource: DataSource,
     private readonly roomService: RoomService,
 
+    @InjectRepository(Room)
+    private readonly roomRepository: Repository<Room>,
+
     @InjectRepository(RoomStatus)
     private readonly roomStatusRepository: Repository<RoomStatus>,
   ) {}
 
-  async getRoomStatusByPeriod(
+  async changeRegularStatus(
+    roomId: number,
+    status: RoomStatusEnum,
+  ): Promise<boolean> {
+    const room = await this.roomService.getOneById(roomId);
+    if (!room) throw new NotFoundException();
+
+    const availabilityStatuses = this.getAvailabilityStatuses();
+
+    if (availabilityStatuses.includes(status)) {
+      room.regularIsAvailable = true;
+    } else {
+      room.regularIsAvailable = false;
+    }
+
+    room.regularStatus = status;
+
+    await room.save();
+    return true;
+  }
+
+  async getAvailableRoomsByPeriod(period: RoomDatesPeriod) {
+    const { startDate, endDate } = period;
+    const rooms = await this.roomRepository
+      .createQueryBuilder('room')
+      .leftJoinAndSelect('room.roomStatus', 'roomStatus')
+      .where('roomStatus.isAvailable = true')
+      .andWhere('roomStatus.startDateTime <= :startDate', { startDate })
+      .andWhere('roomStatus.endDateTime >= :endDate', { endDate })
+      .orWhere('room.regularIsAvailable = true')
+      .andWhere(
+        `(roomStatus.startDateTime > :endDate
+         OR
+         roomStatus.endDateTime < :startDate
+         OR
+         roomStatus.isAvailable != false)`,
+        { startDate, endDate },
+      )
+      .getMany();
+    return rooms;
+  }
+
+  async getUnavailableRoomsByPeriod(period: RoomDatesPeriod) {
+    const { startDate, endDate } = period;
+    const rooms = await this.roomRepository
+      .createQueryBuilder('room')
+      .leftJoinAndSelect('room.roomStatus', 'roomStatus')
+      .where('roomStatus.isAvailable = false')
+      .andWhere('roomStatus.startDateTime <= :startDate', { startDate })
+      .andWhere('roomStatus.endDateTime >= :endDate', { endDate })
+      .orWhere('room.regularIsAvailable = false')
+      .andWhere(`roomStatus.id IS NULL`)
+      .getMany();
+    return rooms;
+  }
+
+  async getRoomStatusesByPeriod(
     roomId: number,
     period: RoomDatesPeriod,
   ): Promise<RoomStatus[]> {
@@ -156,5 +216,20 @@ export class RoomStatusService {
       status: newStatus,
     });
     return await manager.save(newRoomStatus);
+  }
+
+  private getAvailabilityStatuses() {
+    return [RoomStatusEnum.AVAILABLE_FOR_BOOKING];
+  }
+
+  private getUnavailabilityStatuses() {
+    return [
+      RoomStatusEnum.BOOKED,
+      RoomStatusEnum.LONG_STAYING,
+      RoomStatusEnum.MAINTENANCE,
+      RoomStatusEnum.OUT_OF_ORDER,
+      RoomStatusEnum.STAYING,
+      RoomStatusEnum.RESERVED,
+    ];
   }
 }

@@ -4,7 +4,6 @@ import {
   Column,
   BaseEntity,
   ManyToOne,
-  JoinTable,
   RelationId,
 } from 'typeorm';
 import { Room } from './room.entity';
@@ -27,6 +26,5 @@ export class RoomPrice extends BaseEntity {
   roomId: number;
 
   @ManyToOne(() => Room)
-  @JoinTable()
   room: Room;
 }

@@ -5,7 +5,7 @@ import { singleDateSchema } from 'src/shared/validation/single.date.schema';
 import { RoomDatesPeriod } from '../types/room.types';
 import { SetRoomPriceDto } from '../dto/set.room.price.dto';
 
-@Controller('room')
+@Controller('rooms')
 export class RoomPriceController {
   constructor(private readonly roomPriceService: RoomPriceService) {}
 

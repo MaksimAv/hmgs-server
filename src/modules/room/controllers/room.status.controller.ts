@@ -5,12 +5,34 @@ import { SetRoomStatusDto } from '../dto/set.room.status.dto';
 import { RoomStatusEnum } from '../enums/room.status.enum';
 import { singleDateSchema } from 'src/shared/validation/single.date.schema';
 
-@Controller('room')
+@Controller('rooms')
 export class RoomStatusController {
   constructor(private readonly roomStatusService: RoomStatusService) {}
 
+  @Get('available/period')
+  async getAvailableRoomsByPeriod(
+    @Query('startDate') start: string,
+    @Query('endDate') end: string,
+  ): Promise<any> {
+    const startDate = singleDateSchema.parse(start);
+    const endDate = singleDateSchema.parse(end);
+    const period: RoomDatesPeriod = { startDate, endDate };
+    return await this.roomStatusService.getAvailableRoomsByPeriod(period);
+  }
+
+  @Get('unavailable/period')
+  async getUnavailableRoomsByPeriod(
+    @Query('startDate') start: string,
+    @Query('endDate') end: string,
+  ): Promise<any> {
+    const startDate = singleDateSchema.parse(start);
+    const endDate = singleDateSchema.parse(end);
+    const period: RoomDatesPeriod = { startDate, endDate };
+    return await this.roomStatusService.getUnavailableRoomsByPeriod(period);
+  }
+
   @Get(':id/status/period')
-  async getRoomPriceByPeriod(
+  async getRoomStatusesByPeriod(
     @Param('id') roomId: number,
     @Query('startDate') start: string,
     @Query('endDate') end: string,
@@ -18,7 +40,7 @@ export class RoomStatusController {
     const startDate = singleDateSchema.parse(start);
     const endDate = singleDateSchema.parse(end);
     const period: RoomDatesPeriod = { startDate, endDate };
-    return await this.roomStatusService.getRoomStatusByPeriod(roomId, period);
+    return await this.roomStatusService.getRoomStatusesByPeriod(roomId, period);
   }
 
   @Post(':id/status')

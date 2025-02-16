@@ -4,8 +4,8 @@ import {
   Column,
   BaseEntity,
   ManyToOne,
-  JoinTable,
   RelationId,
+  JoinColumn,
 } from 'typeorm';
 import { Room } from './room.entity';
 import { RoomStatusEnum } from '../enums/room.status.enum';
@@ -28,10 +28,13 @@ export class RoomStatus extends BaseEntity {
   })
   status: RoomStatusEnum;
 
+  @Column({ type: 'boolean', default: false })
+  isAvailable: boolean;
+
   @RelationId((roomStatus: RoomStatus) => roomStatus.room)
   roomId: number;
 
-  @ManyToOne(() => Room)
-  @JoinTable()
+  @ManyToOne(() => Room, (room) => room.roomStatus)
+  @JoinColumn({ name: 'roomId' })
   room: Room;
 }

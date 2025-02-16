@@ -41,44 +41,41 @@ export class Room extends BaseEntity {
   @Column()
   currencyCode: string;
 
-  @Column({ type: 'float', nullable: false, default: 0.0 })
+  @Column({ type: 'float', default: 0.0 })
   size: number;
 
   @Column({ type: 'int', nullable: true })
   floor: number;
 
-  @Column()
-  categoryId: number;
-
-  @Column({ type: 'int', nullable: false, default: 0 })
+  @Column({ type: 'int', default: 0 })
   minStayDays: number;
 
-  @Column({ type: 'int', nullable: false, default: 90 })
+  @Column({ type: 'int', default: 90 })
   maxStayDays: number;
+
+  @Column()
+  categoryId: number;
 
   @ManyToOne(() => RoomCategory)
   @JoinColumn({ name: 'categoryId' })
   category: string;
 
-  @Column({ type: 'float', nullable: false, default: 0.0 })
+  @Column({ type: 'float', default: 0.0 })
   regularPrice: number;
 
   @OneToMany(() => RoomPrice, (roomPrice) => roomPrice.room, { nullable: true })
   roomPrice: RoomPrice[];
 
-  @Column({ type: 'boolean', nullable: false, default: false })
-  isAvailable: boolean;
+  @Column({ type: 'boolean', default: false })
+  regularIsAvailable: boolean;
 
   @Column({
     type: 'enum',
     enum: RoomStatusEnum,
-    nullable: false,
     default: RoomStatusEnum.OUT_OF_ORDER,
   })
   regularStatus: RoomStatusEnum;
 
-  @OneToMany(() => RoomStatus, (roomStatus) => roomStatus.room, {
-    nullable: true,
-  })
+  @OneToMany(() => RoomStatus, (roomStatus) => roomStatus.room)
   roomStatus: RoomStatus[];
 }

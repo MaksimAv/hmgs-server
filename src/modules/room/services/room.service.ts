@@ -33,7 +33,7 @@ export class RoomService {
       regularPrice: payload.regularPrice,
       currencyCode: payload.currencyCode,
       regularStatus: RoomStatusEnum.OUT_OF_ORDER,
-      isAvailable: false,
+      regularIsAvailable: false,
     });
 
     return await newRoom.save();
