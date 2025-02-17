@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { GetRoomPriceResponse } from 'hmgs-contracts';
 import { RoomPriceService } from '../services/room.price.service';
-import { singleDateSchema } from 'src/shared/validation/single.date.schema';
 import { RoomDatesPeriod } from '../types/room.types';
 import { SetRoomPriceDto } from '../dto/set.room.price.dto';
+import { singleDateSchema } from '../../../shared/validation/single.date.schema';
 
 @Controller('rooms')
 export class RoomPriceController {

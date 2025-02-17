@@ -3,7 +3,7 @@ import { RoomStatusService } from '../services/room.status.service';
 import { RoomDatesPeriod } from '../types/room.types';
 import { SetRoomStatusDto } from '../dto/set.room.status.dto';
 import { RoomStatusEnum } from '../enums/room.status.enum';
-import { singleDateSchema } from 'src/shared/validation/single.date.schema';
+import { singleDateSchema } from '../../../shared/validation/single.date.schema';
 
 @Controller('rooms')
 export class RoomStatusController {

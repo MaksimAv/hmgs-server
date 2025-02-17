@@ -7,10 +7,10 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { RoomCategory } from 'src/modules/room-category/entities/room.category.entity';
 import { RoomPrice } from './room.price.entity';
 import { RoomStatus } from './room.status.entity';
 import { RoomStatusEnum } from '../enums/room.status.enum';
+import { RoomCategory } from '../../room-category/entities/room.category.entity';
 
 // TODO: RoomAmenity - included in the price, for example: wifi, pool, air conditioning.
 // TODO: RoomFeatures - things that can be purchased for a some price, such as breakfast, bathhouse
@@ -58,7 +58,7 @@ export class Room extends BaseEntity {
 
   @ManyToOne(() => RoomCategory)
   @JoinColumn({ name: 'categoryId' })
-  category: string;
+  category: RoomCategory;
 
   @Column({ type: 'float', default: 0.0 })
   regularPrice: number;
