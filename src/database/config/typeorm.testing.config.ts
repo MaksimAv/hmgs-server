@@ -9,6 +9,7 @@ export const TESTING_DATA_SOURCE = new DataSource({
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+  entities: [__dirname + '/../../modules/**/*.entity{.ts,.js}'],
   logging: false,
   synchronize: false,
 });

@@ -4,6 +4,7 @@ import { TESTING_DATA_SOURCE } from '../../src/database/config/typeorm.testing.c
 export const prepareDatabase = async () => {
   const dataSource: DataSource = TESTING_DATA_SOURCE;
   if (!dataSource.isInitialized) await dataSource.initialize();
-  await dataSource.runMigrations();
+  // await dataSource.runMigrations();
+  await dataSource.synchronize(true);
   if (dataSource.isInitialized) await dataSource.destroy();
 };
