@@ -44,7 +44,7 @@ describe('Room Api (e2e)', () => {
     await app.close();
   });
 
-  describe('CASE. Statuses creation and search for available rooms', () => {
+  describe('CASE. Statuses creation and search available rooms', () => {
     let roomId: number;
 
     beforeAll(async () => {
@@ -130,7 +130,6 @@ describe('Room Api (e2e)', () => {
       const statuses = await roomStatusRepository.find({
         order: { startDateTime: 'ASC' },
       });
-      console.log(statuses);
       expect(statuses[1].startDateTime.toISOString()).toBe(data.startDate);
       expect(statuses[1].endDateTime.toISOString()).toBe(data.endDate);
       expect(statuses[1].status).toBe(data.status);
@@ -171,7 +170,7 @@ describe('Room Api (e2e)', () => {
 
       const statuses = await roomStatusRepository.find({
         where: {
-          startDateTime: MoreThanOrEqual(new Date('2026-01-01 00:00:00')),
+          startDateTime: MoreThanOrEqual(new Date('2026-01-01T00:00:00.000Z')),
         },
         order: { startDateTime: 'ASC' },
       });
@@ -190,13 +189,14 @@ describe('Room Api (e2e)', () => {
 
       const statuses = await roomStatusRepository.find({
         where: {
-          startDateTime: MoreThanOrEqual(new Date('2026-01-01 00:00:00')),
+          startDateTime: MoreThanOrEqual(new Date('2026-01-01T00:00:00.000Z')),
         },
         order: { startDateTime: 'ASC' },
       });
-      expect(
-        statuses.every((i) => i.status === RoomStatusEnum.MAINTENANCE),
-      ).toBe(true);
+      expect(statuses[0].startDateTime.toISOString()).toBe(data.startDate);
+      expect(statuses[0].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[0].status).toBe(data.status);
+      expect(statuses[0].roomId).toBe(roomId);
     });
   });
 
@@ -309,7 +309,7 @@ describe('Room Api (e2e)', () => {
       });
     });
 
-    it('Set price at 2000 from 06.01 at 12.01', async () => {
+    it('Set price at 2000 from 06.01 to 12.01', async () => {
       const data = TEST_DATA[4];
       await request(app.getHttpServer())
         .post(`/rooms/${roomId}/price`)
