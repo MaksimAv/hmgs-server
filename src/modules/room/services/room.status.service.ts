@@ -209,11 +209,13 @@ export class RoomStatusService {
     newStatus: RoomStatusEnum,
     manager: EntityManager,
   ) {
+    const isAvailable = this.getAvailabilityStatuses().includes(newStatus);
     const newRoomStatus = this.roomStatusRepository.create({
       room: { id: roomId },
       startDateTime: newPeriod.startDate,
       endDateTime: newPeriod.endDate,
       status: newStatus,
+      isAvailable,
     });
     return await manager.save(newRoomStatus);
   }
