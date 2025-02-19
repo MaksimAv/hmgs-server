@@ -33,12 +33,7 @@ export class RoomFactory {
     return await this.roomRepository.save(newRoomsToSave);
   }
 
-  private async createRelations(): Promise<RoomRelationsIds> {
-    const category = await new RoomCategoryFactory(this.dataSource).create();
-    return { categoryId: category.id };
-  }
-
-  private createEntity(
+  createEntity(
     relationIds: RoomRelationsIds,
     overrides: Partial<Room> = {},
   ): Room {
@@ -59,5 +54,10 @@ export class RoomFactory {
       regularPrice: +faker.finance.amount({ min: 1000, max: 9000, dec: 2 }),
       ...overrides,
     });
+  }
+
+  private async createRelations(): Promise<RoomRelationsIds> {
+    const category = await new RoomCategoryFactory(this.dataSource).create();
+    return { categoryId: category.id };
   }
 }

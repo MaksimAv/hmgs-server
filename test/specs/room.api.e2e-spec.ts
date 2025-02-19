@@ -1,19 +1,25 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 import * as request from 'supertest';
 import { App } from 'supertest/types';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, MoreThanOrEqual, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { RoomFactory } from '../factory';
 import { AppModule } from '../../src/app.module';
 import { RoomPrice } from '../../src/modules/room/entities/room.price.entity';
+import { RoomStatus } from '../../src/modules/room/entities/room.status.entity';
+import { cleanupDatabase } from '../scripts/cleanup.database';
+import { RoomStatusEnum } from '../../src/modules/room/enums/room.status.enum';
+import { RoomStatusRequestEnum } from 'hmgs-contracts';
 
 describe('Room Api (e2e)', () => {
   let app: INestApplication<App>;
-  let repository: Repository<RoomPrice>;
   let dataSource: DataSource;
-
-  let roomId: number;
+  let roomPriceRepository: Repository<RoomPrice>;
+  let roomStatusRepository: Repository<RoomStatus>;
+  let roomFactory: RoomFactory;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -24,21 +30,178 @@ describe('Room Api (e2e)', () => {
     await app.init();
 
     dataSource = moduleFixture.get<DataSource>(DataSource);
-    repository = moduleFixture.get<Repository<RoomPrice>>(
+    roomPriceRepository = moduleFixture.get<Repository<RoomPrice>>(
       getRepositoryToken(RoomPrice),
     );
+    roomStatusRepository = moduleFixture.get<Repository<RoomStatus>>(
+      getRepositoryToken(RoomStatus),
+    );
 
-    const roomFactory = new RoomFactory(dataSource);
-    roomId = (await roomFactory.create()).id;
+    roomFactory = new RoomFactory(dataSource);
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  test.todo('CASE. Basic room operations');
+  describe('CASE. Statuses creation and search for available rooms', () => {
+    let roomId: number;
+
+    beforeAll(async () => {
+      roomId = (
+        await roomFactory.create({
+          regularIsAvailable: true,
+          regularStatus: RoomStatusEnum.AVAILABLE_FOR_BOOKING,
+        })
+      ).id;
+    });
+
+    afterAll(async () => {
+      await cleanupDatabase(dataSource);
+    });
+
+    const TEST_DATA = [
+      {
+        startDate: '2025-01-01 14:00:000',
+        endDate: '2025-01-07 12:00:000',
+        status: RoomStatusRequestEnum.BOOKED,
+      },
+      {
+        startDate: '2025-01-07 14:00:000',
+        endDate: '2025-01-10 12:00:000',
+        status: RoomStatusRequestEnum.BOOKED,
+      },
+      {
+        startDate: '2025-01-07 14:00:000',
+        endDate: '2025-01-10 12:00:000',
+        status: RoomStatusRequestEnum.AVAILABLE_FOR_BOOKING,
+      },
+      {
+        startDate: '2026-01-01 14:00:000',
+        endDate: '2026-01-05 12:00:000',
+        status: RoomStatusRequestEnum.MAINTENANCE,
+      },
+      {
+        startDate: '2026-01-01 14:00:000',
+        endDate: '2026-01-08 12:00:000',
+        status: RoomStatusRequestEnum.MAINTENANCE,
+      },
+    ];
+
+    it('Set booked status', async () => {
+      const data = TEST_DATA[0];
+      await request(app.getHttpServer())
+        .post(`/rooms/${roomId}/status`)
+        .send(data)
+        .expect(201);
+
+      const statuses = await roomStatusRepository.find({
+        order: { startDateTime: 'ASC' },
+      });
+      expect(statuses[0]).toMatchObject(data);
+      expect(statuses[0].roomId).toBe(roomId);
+    });
+
+    it('Set new booked status', async () => {
+      const data = TEST_DATA[1];
+      await request(app.getHttpServer())
+        .post(`/rooms/${roomId}/status`)
+        .send(data)
+        .expect(201);
+
+      const statuses = await roomStatusRepository.find({
+        order: { startDateTime: 'ASC' },
+      });
+      expect(statuses[1]).toMatchObject(data);
+      expect(statuses[1].roomId).toBe(roomId);
+    });
+
+    it('Replace booked status on available', async () => {
+      const data = TEST_DATA[2];
+      await request(app.getHttpServer())
+        .post(`/rooms/${roomId}/status`)
+        .send(data)
+        .expect(201);
+
+      const statuses = await roomStatusRepository.find({
+        order: { startDateTime: 'ASC' },
+      });
+      console.log(statuses);
+      expect(statuses[1]).toMatchObject(data);
+      expect(statuses[1].roomId).toBe(roomId);
+    });
+
+    it('Room should be available from 07.01.2025 to 15.01.2025', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/rooms/available/period`)
+        .query({
+          startDate: '2025-01-07 14:00:00',
+          endDate: '2025-01-15 12:00:00',
+        })
+        .expect(200);
+
+      expect(response.body.length).toBe(1);
+      expect(response.body[0].id).toBe(roomId);
+    });
+
+    it('Room should be unavailable from 01.01.2025 to 07.01.2025', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/rooms/available/period`)
+        .query({
+          startDate: '2025-01-01 14:00:00',
+          endDate: '2025-01-07 12:00:00',
+        })
+        .expect(200);
+
+      expect(response.body.length).toBe(0);
+    });
+
+    it('Set maintenance status', async () => {
+      const data = TEST_DATA[3];
+      await request(app.getHttpServer())
+        .post(`/rooms/${roomId}/status`)
+        .send(data)
+        .expect(201);
+
+      const statuses = await roomStatusRepository.find({
+        where: {
+          startDateTime: MoreThanOrEqual(new Date('2026-01-01 00:00:00')),
+        },
+        order: { startDateTime: 'ASC' },
+      });
+      expect(statuses[0]).toMatchObject(data);
+    });
+
+    it('Extend maintenance status', async () => {
+      const data = TEST_DATA[4];
+      await request(app.getHttpServer())
+        .post(`/rooms/${roomId}/status`)
+        .send(data)
+        .expect(201);
+
+      const statuses = await roomStatusRepository.find({
+        where: {
+          startDateTime: MoreThanOrEqual(new Date('2026-01-01 00:00:00')),
+        },
+        order: { startDateTime: 'ASC' },
+      });
+      expect(
+        statuses.every((i) => i.status === RoomStatusEnum.MAINTENANCE),
+      ).toBe(true);
+    });
+  });
 
   describe('CASE. Multi-price creation in one month', () => {
+    let roomId: number;
+
+    beforeAll(async () => {
+      roomId = (await roomFactory.create()).id;
+    });
+
+    afterAll(async () => {
+      await cleanupDatabase(dataSource);
+    });
+
     const TEST_DATA = [
       { startDate: '2025-01-01', endDate: '2025-01-31', price: 2500 },
       { startDate: '2025-01-01', endDate: '2025-01-05', price: 2700 },
@@ -47,25 +210,29 @@ describe('Room Api (e2e)', () => {
       { startDate: '2025-01-06', endDate: '2025-01-12', price: 2000 },
     ];
 
-    it('01.01 - 01.31 (2500)', async () => {
+    it('Set price at 2500 from 01.01 to 01.31', async () => {
       const data = TEST_DATA[0];
       await request(app.getHttpServer())
         .post(`/rooms/${roomId}/price`)
         .send(data)
         .expect(201);
 
-      const prices = await repository.find({ order: { startDate: 'ASC' } });
+      const prices = await roomPriceRepository.find({
+        order: { startDate: 'ASC' },
+      });
       expect(prices[0]).toMatchObject(data);
     });
 
-    it('01.01 - 05.01 (2700)', async () => {
+    it('Set price at 2700 from 01.01 to 05.01', async () => {
       const data = TEST_DATA[1];
       await request(app.getHttpServer())
         .post(`/rooms/${roomId}/price`)
         .send(data)
         .expect(201);
 
-      const prices = await repository.find({ order: { startDate: 'ASC' } });
+      const prices = await roomPriceRepository.find({
+        order: { startDate: 'ASC' },
+      });
       expect(prices.length).toBe(2);
       expect(prices[0]).toMatchObject(data);
       expect(prices[1]).toMatchObject({
@@ -75,14 +242,16 @@ describe('Room Api (e2e)', () => {
       });
     });
 
-    it('03.01 - 07.01 (2400)', async () => {
+    it('Set price at 2400 from 03.01 to 07.01', async () => {
       const data = TEST_DATA[2];
       await request(app.getHttpServer())
         .post(`/rooms/${roomId}/price`)
         .send(data)
         .expect(201);
 
-      const prices = await repository.find({ order: { startDate: 'ASC' } });
+      const prices = await roomPriceRepository.find({
+        order: { startDate: 'ASC' },
+      });
       expect(prices.length).toBe(3);
       expect(prices[0]).toMatchObject({
         startDate: '2025-01-01',
@@ -97,14 +266,16 @@ describe('Room Api (e2e)', () => {
       });
     });
 
-    it('10.01 - 15.01 (2200)', async () => {
+    it('Set price at 2200 from 10.01 to 15.01', async () => {
       const data = TEST_DATA[3];
       await request(app.getHttpServer())
         .post(`/rooms/${roomId}/price`)
         .send(data)
         .expect(201);
 
-      const prices = await repository.find({ order: { startDate: 'ASC' } });
+      const prices = await roomPriceRepository.find({
+        order: { startDate: 'ASC' },
+      });
       expect(prices.length).toBe(5);
       expect(prices[0]).toMatchObject({
         startDate: '2025-01-01',
@@ -129,14 +300,16 @@ describe('Room Api (e2e)', () => {
       });
     });
 
-    it('06.01 - 12.01 (2000)', async () => {
+    it('Set price at 2000 from 06.01 at 12.01', async () => {
       const data = TEST_DATA[4];
       await request(app.getHttpServer())
         .post(`/rooms/${roomId}/price`)
         .send(data)
         .expect(201);
 
-      const prices = await repository.find({ order: { startDate: 'ASC' } });
+      const prices = await roomPriceRepository.find({
+        order: { startDate: 'ASC' },
+      });
       expect(prices.length).toBe(5);
       expect(prices[0]).toMatchObject({
         startDate: '2025-01-01',
@@ -161,6 +334,4 @@ describe('Room Api (e2e)', () => {
       });
     });
   });
-
-  test.todo('CASE. Multiple statuses creation');
 });

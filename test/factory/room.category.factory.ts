@@ -26,7 +26,7 @@ export class RoomCategoryFactory {
     return await this.repository.save(newRoomCategoriesToSave);
   }
 
-  private createEntity(overrides: Partial<RoomCategory> = {}): RoomCategory {
+  createEntity(overrides: Partial<RoomCategory> = {}): RoomCategory {
     const title = faker.commerce.department();
     return this.repository.create({
       title,
