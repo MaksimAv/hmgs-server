@@ -141,8 +141,8 @@ describe('Room Api (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get(`/rooms/available/period`)
         .query({
-          startDate: '2025-01-07 14:00:00',
-          endDate: '2025-01-15 12:00:00',
+          startDate: '2025-01-07T14:00:00.000Z',
+          endDate: '2025-01-15T12:00:00.000Z',
         })
         .expect(200);
 
@@ -154,8 +154,8 @@ describe('Room Api (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get(`/rooms/available/period`)
         .query({
-          startDate: '2025-01-01 14:00:00',
-          endDate: '2025-01-07 12:00:00',
+          startDate: '2025-01-01T14:00:00.000Z',
+          endDate: '2025-01-07T12:00:00.000Z',
         })
         .expect(200);
 
