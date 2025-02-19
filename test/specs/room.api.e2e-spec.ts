@@ -62,28 +62,28 @@ describe('Room Api (e2e)', () => {
 
     const TEST_DATA = [
       {
-        startDate: '2025-01-01 14:00:000',
-        endDate: '2025-01-07 12:00:000',
+        startDate: '2025-01-01T14:00:00.000Z',
+        endDate: '2025-01-07T12:00:00.000Z',
         status: RoomStatusRequestEnum.BOOKED,
       },
       {
-        startDate: '2025-01-07 14:00:000',
-        endDate: '2025-01-10 12:00:000',
+        startDate: '2025-01-07T14:00:00.000Z',
+        endDate: '2025-01-10T12:00:00.000Z',
         status: RoomStatusRequestEnum.BOOKED,
       },
       {
-        startDate: '2025-01-07 14:00:000',
-        endDate: '2025-01-10 12:00:000',
+        startDate: '2025-01-07T14:00:00.000Z',
+        endDate: '2025-01-10T12:00:00.000Z',
         status: RoomStatusRequestEnum.AVAILABLE_FOR_BOOKING,
       },
       {
-        startDate: '2026-01-01 14:00:000',
-        endDate: '2026-01-05 12:00:000',
+        startDate: '2026-01-01T14:00:00.000Z',
+        endDate: '2026-01-05T12:00:00.000Z',
         status: RoomStatusRequestEnum.MAINTENANCE,
       },
       {
-        startDate: '2026-01-01 14:00:000',
-        endDate: '2026-01-08 12:00:000',
+        startDate: '2026-01-01T14:00:00.000Z',
+        endDate: '2026-01-08T12:00:00.000Z',
         status: RoomStatusRequestEnum.MAINTENANCE,
       },
     ];
@@ -98,7 +98,9 @@ describe('Room Api (e2e)', () => {
       const statuses = await roomStatusRepository.find({
         order: { startDateTime: 'ASC' },
       });
-      expect(statuses[0]).toMatchObject(data);
+      expect(statuses[0].startDateTime.toISOString()).toBe(data.startDate);
+      expect(statuses[0].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[0].status).toBe(data.status);
       expect(statuses[0].roomId).toBe(roomId);
     });
 
@@ -112,7 +114,9 @@ describe('Room Api (e2e)', () => {
       const statuses = await roomStatusRepository.find({
         order: { startDateTime: 'ASC' },
       });
-      expect(statuses[1]).toMatchObject(data);
+      expect(statuses[1].startDateTime.toISOString()).toBe(data.startDate);
+      expect(statuses[1].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[1].status).toBe(data.status);
       expect(statuses[1].roomId).toBe(roomId);
     });
 
@@ -127,7 +131,9 @@ describe('Room Api (e2e)', () => {
         order: { startDateTime: 'ASC' },
       });
       console.log(statuses);
-      expect(statuses[1]).toMatchObject(data);
+      expect(statuses[1].startDateTime.toISOString()).toBe(data.startDate);
+      expect(statuses[1].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[1].status).toBe(data.status);
       expect(statuses[1].roomId).toBe(roomId);
     });
 
@@ -169,7 +175,10 @@ describe('Room Api (e2e)', () => {
         },
         order: { startDateTime: 'ASC' },
       });
-      expect(statuses[0]).toMatchObject(data);
+      expect(statuses[0].startDateTime.toISOString()).toBe(data.startDate);
+      expect(statuses[0].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[0].status).toBe(data.status);
+      expect(statuses[0].roomId).toBe(roomId);
     });
 
     it('Extend maintenance status', async () => {
