@@ -36,12 +36,7 @@ export class RoomStatusService {
 
     const availabilityStatuses = this.getAvailabilityStatuses();
 
-    if (availabilityStatuses.includes(status)) {
-      room.regularIsAvailable = true;
-    } else {
-      room.regularIsAvailable = false;
-    }
-
+    room.regularIsAvailable = availabilityStatuses.includes(status);
     room.regularStatus = status;
 
     await room.save();
@@ -50,36 +45,51 @@ export class RoomStatusService {
 
   async getAvailableRoomsByPeriod(period: RoomDatesPeriod) {
     const { startDate, endDate } = period;
-    const rooms = await this.roomRepository
+    const roomQuery = this.roomRepository
       .createQueryBuilder('room')
       .leftJoinAndSelect('room.roomStatus', 'roomStatus')
-      .where('roomStatus.isAvailable = true')
-      .andWhere('roomStatus.startDateTime <= :startDate', { startDate })
-      .andWhere('roomStatus.endDateTime >= :endDate', { endDate })
-      .orWhere('room.regularIsAvailable = true')
-      .andWhere(
-        `(roomStatus.startDateTime > :endDate
-         OR
-         roomStatus.endDateTime < :startDate
-         OR
-         roomStatus.isAvailable != false)`,
-        { startDate, endDate },
-      )
-      .getMany();
+      .where('room.regularIsAvailable = true');
+
+    const subQuery = roomQuery
+      .subQuery()
+      .select('rs.id')
+      .from('RoomStatus', 'rs')
+      .where('rs.roomId = room.id')
+      .andWhere('rs.isAvailable = false')
+      .andWhere('rs.startDateTime < :endDate')
+      .andWhere('rs.endDateTime > :startDate')
+      .getQuery();
+
+    roomQuery
+      .andWhere(`NOT EXISTS ${subQuery}`)
+      .setParameters({ startDate, endDate });
+
+    const rooms = await roomQuery.getMany();
     return rooms;
   }
 
   async getUnavailableRoomsByPeriod(period: RoomDatesPeriod) {
     const { startDate, endDate } = period;
-    const rooms = await this.roomRepository
+    const roomQuery = this.roomRepository
       .createQueryBuilder('room')
       .leftJoinAndSelect('room.roomStatus', 'roomStatus')
-      .where('roomStatus.isAvailable = false')
-      .andWhere('roomStatus.startDateTime <= :startDate', { startDate })
-      .andWhere('roomStatus.endDateTime >= :endDate', { endDate })
-      .orWhere('room.regularIsAvailable = false')
-      .andWhere(`roomStatus.id IS NULL`)
-      .getMany();
+      .where('room.regularIsAvailable = false');
+
+    const subQuery = roomQuery
+      .subQuery()
+      .select('rs.id')
+      .from('RoomStatus', 'rs')
+      .where('rs.roomId = room.id')
+      .andWhere('rs.isAvailable = true')
+      .andWhere('rs.startDateTime < :endDate')
+      .andWhere('rs.endDateTime > :startDate')
+      .getQuery();
+
+    roomQuery
+      .andWhere(`NOT EXISTS ${subQuery}`)
+      .setParameters({ startDate, endDate });
+
+    const rooms = await roomQuery.getMany();
     return rooms;
   }
 
