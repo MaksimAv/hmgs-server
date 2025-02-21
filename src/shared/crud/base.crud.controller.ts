@@ -1,75 +1,36 @@
-import {
-  Get,
-  NotFoundException,
-  NotImplementedException,
-  Param,
-} from '@nestjs/common';
-import {
-  BaseEntity,
-  FindOptionsRelations,
-  FindOptionsSelect,
-  FindOptionsWhere,
-  Repository,
-} from 'typeorm';
+import { Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { BaseCrudService } from './base.crud.service';
+import { DeepPartial, ObjectLiteral } from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-/* eslint-disable @typescript-eslint/require-await */
+export class BaseCrudController<T extends ObjectLiteral> {
+  constructor(private readonly baseService: BaseCrudService<T>) {}
 
-export abstract class BaseCrudController<
-  T extends BaseEntity & { id: number },
-> {
-  protected relations: FindOptionsRelations<T>;
-  protected select: FindOptionsSelect<T>;
-
-  public constructor(protected readonly repository: Repository<T>) {}
+  @Post()
+  async create(@Body() data: DeepPartial<T>): Promise<T> {
+    return this.baseService.create(data);
+  }
 
   @Get()
-  public async findMany() {
-    await this.canFind();
-    const entities = await this.repository.find({
-      select: this.select,
-      relations: this.relations,
-    });
-    if (entities.length === 0) throw new NotFoundException();
-    return entities;
+  async findAll(): Promise<T[]> {
+    return this.baseService.findAll();
   }
 
   @Get(':id')
-  public async findOne(@Param('id') id: number) {
-    await this.canFind();
-    const entity = await this.repository.findOne({
-      where: { id } as FindOptionsWhere<T>,
-      select: this.select,
-      relations: this.relations,
-    });
-    if (!entity) throw new NotFoundException();
-    return entity;
+  async findOne(@Param('id') id: number): Promise<T | null> {
+    return this.baseService.findOne(id);
   }
 
-  public async create() {
-    await this.canCreate();
+  @Put(':id')
+  async update(
+    @Param('id') id: number,
+    @Body() data: QueryDeepPartialEntity<T>,
+  ): Promise<T | null> {
+    return this.baseService.update(id, data);
   }
 
-  public async update() {
-    await this.canUpdate();
-  }
-
-  public async delete() {
-    await this.canDelete();
-  }
-
-  protected canFind(): Promise<void> {
-    throw new NotImplementedException();
-  }
-
-  protected async canCreate(): Promise<void> {
-    throw new NotImplementedException();
-  }
-
-  protected async canUpdate(): Promise<void> {
-    throw new NotImplementedException();
-  }
-
-  protected async canDelete(): Promise<void> {
-    throw new NotImplementedException();
+  @Delete(':id')
+  async delete(@Param('id') id: number): Promise<boolean> {
+    return this.baseService.delete(id);
   }
 }
