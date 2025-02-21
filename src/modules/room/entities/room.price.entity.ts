@@ -13,10 +13,13 @@ export class RoomPrice extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'daterange' })
+  period: string;
+
+  @Column({ type: 'date', nullable: true })
   startDate: Date;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'date', nullable: true })
   endDate: Date;
 
   @Column({ nullable: false, type: 'float', default: 0.0 })

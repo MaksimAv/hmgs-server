@@ -9,7 +9,14 @@ import {
 import { RoomPrice } from '../entities/room.price.entity';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { RoomDatesPeriod } from '../types/room.types';
-import { addDays, formatISO, isAfter, isBefore, subDays } from 'date-fns';
+import {
+  addDays,
+  format,
+  formatISO,
+  isAfter,
+  isBefore,
+  subDays,
+} from 'date-fns';
 import { RoomService } from './room.service';
 
 @Injectable()
@@ -85,14 +92,14 @@ export class RoomPriceService {
     period: RoomDatesPeriod,
     manager: EntityManager,
   ) {
-    return await manager.getRepository(RoomPrice).find({
-      where: {
-        room: { id: roomId },
-        startDate: LessThanOrEqual(period.endDate),
-        endDate: MoreThanOrEqual(period.startDate),
-      },
-      relations: { room: true },
-    });
+    return await manager
+      .getRepository(RoomPrice)
+      .createQueryBuilder('roomPrice')
+      .where('roomPrice.roomId = :roomId', { roomId })
+      .andWhere('roomPrice.period && :targetPeriod', {
+        targetPeriod: `[${format(period.startDate, 'yyyy-MM-dd')}, ${format(period.endDate, 'yyyy-MM-dd')}]`,
+      })
+      .getMany();
   }
 
   private async splitOverlapRoomPrice(
@@ -118,12 +125,12 @@ export class RoomPriceService {
     ) {
       const newBeforePeriod = this.roomPriceRepository.create({
         ...exist,
-        endDate: formatISO(subDays(newPeriod.startDate, 1)),
+        period: `[${format(exist.startDate, 'yyyy-MM-dd')}, ${format(subDays(newPeriod.startDate, 1), 'yyyy-MM-dd')}]`,
         room: { id: roomId },
       });
       const newAfterPeriod = this.roomPriceRepository.create({
         ...exist,
-        startDate: formatISO(addDays(newPeriod.endDate, 1)),
+        period: `[${format(addDays(newPeriod.endDate, 1), 'yyyy-MM-dd')}, ${format(exist.endDate, 'yyyy-MM-dd')}]`,
         room: { id: roomId },
       });
       await manager.save([newBeforePeriod, newAfterPeriod]);
@@ -134,7 +141,7 @@ export class RoomPriceService {
     if (isBefore(exist.startDate, newPeriod.startDate)) {
       const before = this.roomPriceRepository.create({
         ...exist,
-        endDate: formatISO(subDays(newPeriod.startDate, 1)),
+        period: `[${format(exist.startDate, 'yyyy-MM-dd')}, ${format(subDays(newPeriod.startDate, 1), 'yyyy-MM-dd')}]`,
         room: { id: roomId },
       });
       await manager.save(before);
@@ -145,7 +152,7 @@ export class RoomPriceService {
     if (isAfter(exist.endDate, newPeriod.endDate)) {
       const after = this.roomPriceRepository.create({
         ...exist,
-        startDate: formatISO(addDays(newPeriod.endDate, 1)),
+        period: `[${format(addDays(newPeriod.endDate, 1), 'yyyy-MM-dd')}, ${format(exist.endDate, 'yyyy-MM-dd')}]`,
         room: { id: roomId },
       });
       await manager.save(after);
@@ -161,8 +168,7 @@ export class RoomPriceService {
   ) {
     const newRoomPrice = this.roomPriceRepository.create({
       room: { id: roomId },
-      startDate: newPeriod.startDate,
-      endDate: newPeriod.endDate,
+      period: `[${format(newPeriod.startDate, 'yyyy-MM-dd')}, ${format(newPeriod.endDate, 'yyyy-MM-dd')}]`,
       price: newPrice,
     });
     return await manager.save(newRoomPrice);
