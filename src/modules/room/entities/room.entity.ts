@@ -15,7 +15,7 @@ import { RoomCategory } from '../../room-category/entities/room.category.entity'
 // TODO: RoomAmenity - included in the price, for example: wifi, pool, air conditioning.
 // TODO: RoomFeatures - things that can be purchased for a some price, such as breakfast, bathhouse
 
-@Entity()
+@Entity('rooms')
 export class Room extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
