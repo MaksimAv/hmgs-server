@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { Room } from '../../room/entities/room.entity';
 
-@Entity()
+@Entity('room_categories')
 export class RoomCategory extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;

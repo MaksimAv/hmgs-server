@@ -10,7 +10,7 @@ import {
 import { Room } from './room.entity';
 import { RoomStatusEnum } from '../enums/room.status.enum';
 
-@Entity()
+@Entity('room_statuses')
 export class RoomStatus extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
