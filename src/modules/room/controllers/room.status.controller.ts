@@ -52,7 +52,7 @@ export class RoomStatusController {
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
     };
-    const status = body.status as RoomStatusEnum;
+    const status = body.status as unknown as RoomStatusEnum;
     await this.roomStatusService.setRoomStatus(roomId, period, status);
     return { success: true };
   }
