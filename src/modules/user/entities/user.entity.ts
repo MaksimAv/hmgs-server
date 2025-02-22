@@ -5,7 +5,9 @@ import {
   Column,
   BaseEntity,
   CreateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
+import { UserRoleEnum } from '../enums/user.role.enum';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -25,10 +27,16 @@ export class User extends BaseEntity {
   middleName?: string;
 
   @Column({ unique: true })
-  email: string;
-
-  @Column({ unique: true })
   phone: string;
+
+  @Column()
+  password: string;
+
+  @Column({ type: 'enum', enum: UserRoleEnum, default: UserRoleEnum.CUSTOMER })
+  role: UserRoleEnum;
+
+  @Column({ nullable: true })
+  email?: string;
 
   @Column({ nullable: true })
   address?: string;
@@ -36,17 +44,17 @@ export class User extends BaseEntity {
   @Column({ type: 'date', nullable: true })
   birthday?: Date;
 
-  @Column({ default: false })
-  isDeleted: boolean;
-
-  @Column({ default: false })
-  isDisabled: boolean;
-
-  @Column({ type: 'time with time zone' })
-  lastLogin: Date;
-
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ type: 'time with time zone', nullable: true })
+  lastLogin: Date;
+
+  @Column({ type: 'time with time zone', nullable: true })
+  disabledAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   getFullName(): string {
     return [this.firstName, this.middleName, this.lastName]
