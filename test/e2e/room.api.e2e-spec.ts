@@ -44,7 +44,7 @@ describe('Room Api (e2e)', () => {
     await app.close();
   });
 
-  describe('CASE. Statuses creation and search available rooms', () => {
+  describe('Statuses creation and search available rooms', () => {
     let roomId: number;
 
     beforeAll(async () => {
@@ -200,7 +200,7 @@ describe('Room Api (e2e)', () => {
     });
   });
 
-  describe('CASE. Multi-price creation in one month', () => {
+  describe('Multi-price creation in one month', () => {
     let roomId: number;
 
     beforeAll(async () => {
