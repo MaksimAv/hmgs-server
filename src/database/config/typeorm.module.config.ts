@@ -1,8 +1,8 @@
 import { ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
-export const TYPEORM_MODULE = TypeOrmModule.forRootAsync({
-  useFactory: (configService: ConfigService) => ({
+export const TYPEORM_MODULE_CONFIG = {
+  useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
     type: 'postgres',
     host: configService.get<string>('POSTGRES_HOST'),
     port: configService.get<number>('POSTGRES_PORT'),
@@ -14,4 +14,4 @@ export const TYPEORM_MODULE = TypeOrmModule.forRootAsync({
     entities: [__dirname + '/../../modules/**/*.entity{.ts,.js}'],
   }),
   inject: [ConfigService],
-});
+};

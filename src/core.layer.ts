@@ -1,10 +1,10 @@
 import { ConfigModule } from '@nestjs/config';
-import { TYPEORM_MODULE } from './database/config/typeorm.module.config';
+import { DatabaseModule } from './database/database.module';
 
 export const CORE_LAYER = [
   ConfigModule.forRoot({
     isGlobal: true,
     expandVariables: true,
   }),
-  TYPEORM_MODULE,
+  DatabaseModule,
 ];
