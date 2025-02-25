@@ -1,4 +1,9 @@
+import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
-import { CreateUserSchema } from 'hmgs-contracts';
+import { RegistrationUserSchema } from 'hmgs-contracts';
 
-export class CreateUserDto extends createZodDto(CreateUserSchema) {}
+export class CreateUserDto extends createZodDto(
+  RegistrationUserSchema.omit({ password: true }).extend({
+    passwordHash: z.string(),
+  }),
+) {}

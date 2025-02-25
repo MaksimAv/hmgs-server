@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -14,7 +13,7 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, default: randomUUID() })
+  @Column({ unique: true })
   sub: string;
 
   @Column()

@@ -9,6 +9,7 @@ import { FindOptionsWhere, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create.user.dto';
 import { UserUniqueValidation } from './types/user';
 import { UserRoleEnum } from './enums/user.role.enum';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UserService {
@@ -45,6 +46,7 @@ export class UserService {
       firstName: data.firstName,
       lastName: data.lastName,
       middleName: data.middleName,
+      sub: randomUUID(),
       phone: data.phone,
       password: data.passwordHash,
       email: data.email,
