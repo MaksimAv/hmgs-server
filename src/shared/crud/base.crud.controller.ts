@@ -3,7 +3,7 @@ import { BaseCrudService } from './base.crud.service';
 import { DeepPartial, ObjectLiteral } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-export class BaseCrudController<T extends ObjectLiteral> {
+export abstract class BaseCrudController<T extends ObjectLiteral> {
   constructor(private readonly baseService: BaseCrudService<T>) {}
 
   @Post()

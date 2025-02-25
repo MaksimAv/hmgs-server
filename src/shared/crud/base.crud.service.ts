@@ -8,7 +8,7 @@ import { Injectable } from '@nestjs/common';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 @Injectable()
-export class BaseCrudService<T extends ObjectLiteral> {
+export abstract class BaseCrudService<T extends ObjectLiteral> {
   constructor(private readonly repository: Repository<T>) {}
 
   async create(data: DeepPartial<T>): Promise<T> {
