@@ -1,0 +1,33 @@
+services:
+  postgres_demo:
+    container_name: postgres_demo
+    image: postgres:16
+    env_file:
+      - .env.demo
+    environment:
+      PG_DATA: /var/lib/postgresql/data
+    ports:
+      - 5433:5432
+    volumes:
+      - postgres_demo:/var/lib/postgresql/data
+    restart: on-failure
+
+  hmgs_demo:
+    container_name: hmgs_demo
+    depends_on:
+      - postgres_demo
+    build:
+      dockerfile: docker/demo/Dockerfile
+    env_file:
+      - .env.demo
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - 5000:5000
+      - 9229:9229
+    command: npm run start:dev
+    restart: on-failure
+
+volumes:
+  postgres_demo:
