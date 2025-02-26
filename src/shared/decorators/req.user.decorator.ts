@@ -3,7 +3,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { User } from '../../modules/user/entities/user.entity';
+import { User } from '../../modules/user/user.entity';
 import { RequestWithUser } from '../../modules/auth/types/request';
 
 export const ReqUser = createParamDecorator(

@@ -1,5 +1,5 @@
 import { JwtPayload } from 'jsonwebtoken';
-import { UserRoleEnum } from '../../user/enums/user.role.enum';
+import { UserRoleEnum } from '../../user/user-role.enum';
 
 export type AuthTokenPair = { accessToken: string; refreshToken: string };
 export type AuthUserAccessPayload = {

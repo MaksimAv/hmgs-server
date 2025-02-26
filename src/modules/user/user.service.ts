@@ -4,11 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { User } from './user.entity';
 import { FindOptionsWhere, Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create.user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UserUniqueValidation } from './types/user';
-import { UserRoleEnum } from './enums/user.role.enum';
+import { UserRoleEnum } from './user-role.enum';
 import { randomUUID } from 'crypto';
 
 @Injectable()

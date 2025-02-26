@@ -8,10 +8,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { RoomFactory } from '../factory';
 import { AppModule } from '../../src/app.module';
-import { RoomPrice } from '../../src/modules/room/entities/room.price.entity';
-import { RoomStatus } from '../../src/modules/room/entities/room.status.entity';
+import { RoomPrice } from '../../src/modules/room-price/room-price.entity';
+import { RoomStatus } from '../../src/modules/room-status/room-status.entity';
 import { cleanupDatabase } from '../scripts/cleanup.database';
-import { RoomStatusEnum } from '../../src/modules/room/enums/room.status.enum';
+import { RoomStatusEnum } from '../../src/modules/room-status/room-status.enum';
 import { RoomStatusRequestEnum } from 'hmgs-contracts';
 
 describe('Room Api (e2e)', () => {
@@ -138,7 +138,7 @@ describe('Room Api (e2e)', () => {
 
     it('Room should be available from 07.01.2025 to 15.01.2025', async () => {
       const response = await request(app.getHttpServer())
-        .get(`/rooms/available/period`)
+        .get(`/rooms/available`)
         .query({
           startDate: '2025-01-07T14:00:00.000Z',
           endDate: '2025-01-15T12:00:00.000Z',
@@ -151,7 +151,7 @@ describe('Room Api (e2e)', () => {
 
     it('Room should be unavailable from 01.01.2025 to 07.01.2025', async () => {
       const response = await request(app.getHttpServer())
-        .get(`/rooms/available/period`)
+        .get(`/rooms/available`)
         .query({
           startDate: '2025-01-01T14:00:00.000Z',
           endDate: '2025-01-07T12:00:00.000Z',

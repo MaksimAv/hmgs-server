@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { DataSource, Repository } from 'typeorm';
 import { RoomCategoryFactory } from './room.category.factory';
-import { Room } from '../../src/modules/room/entities/room.entity';
+import { Room } from '../../src/modules/room/room.entity';
 
 type RoomRelationsIds = {
   categoryId: number;

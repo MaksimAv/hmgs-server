@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { DataSource, Repository } from 'typeorm';
-import { RoomCategory } from '../../src/modules/room-category/entities/room.category.entity';
+import { RoomCategory } from '../../src/modules/room-category/room-category.entity';
 
 export class RoomCategoryFactory {
   private repository: Repository<RoomCategory>;
