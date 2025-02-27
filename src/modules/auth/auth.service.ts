@@ -29,8 +29,8 @@ export class AuthService {
     return await this.generateUserTokenPair(user);
   }
 
-  async refresh(user: User): Promise<AuthTokenPair> {
-    return await this.generateUserTokenPair(user);
+  async refresh(user: User): Promise<string> {
+    return await this.tokenService.generateAccess(user);
   }
 
   async getUserBySub(sub: string): Promise<User> {

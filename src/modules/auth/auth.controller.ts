@@ -57,14 +57,9 @@ export class AuthController {
   @Post('refresh')
   @ApiCookieAuth()
   @UseGuards(RefreshGuard)
-  async refresh(
-    @Res({ passthrough: true }) res: Response,
-    @ReqUser() user: User,
-  ) {
-    const tokenPair = await this.authService.refresh(user);
-    const path = this.getPath();
-    this.cookieMangerService.setAuthCookie(res, tokenPair.refreshToken, path);
-    return { [JSON_ACCESS_TOKEN]: tokenPair.accessToken };
+  async refresh(@ReqUser() user: User) {
+    const accessToken = await this.authService.refresh(user);
+    return { [JSON_ACCESS_TOKEN]: accessToken };
   }
 
   @Post('sign-out')

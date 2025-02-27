@@ -32,7 +32,9 @@ describe('Auth Api (e2e)', () => {
     await app.close();
   });
 
-  describe('Registration', () => {
+  describe('Registration and Authorization', () => {
+    let cookie: string[];
+
     it('Should successfully register a new user', async () => {
       const response = await request(app.getHttpServer())
         .post(`${AUTH_ROUTE}/sign-up`)
@@ -42,10 +44,6 @@ describe('Auth Api (e2e)', () => {
       expect(response.body[JSON_ACCESS_TOKEN]).toBeTruthy();
       expect(response.headers['set-cookie'].length).toBe(1);
     });
-  });
-
-  describe('Authentication', () => {
-    let cookie: string[];
 
     it('Should login a user with valid credentials', async () => {
       const response = await request(app.getHttpServer())
@@ -66,7 +64,6 @@ describe('Auth Api (e2e)', () => {
         .expect(201);
 
       expect(response.body[JSON_ACCESS_TOKEN]).toBeTruthy();
-      expect(response.headers['set-cookie'].length).toBe(1);
     });
 
     it('Should logout a user', async () => {
