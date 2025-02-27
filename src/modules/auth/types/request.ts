@@ -1,8 +1,8 @@
 import { Request } from 'express';
-import { User } from '../../user/user.entity';
+import { AuthUserPayloadSigned } from './auth';
 
 export interface RequestWithUser extends Request {
-  user: User;
+  user: AuthUserPayloadSigned;
 }
 export interface RequestWithCookie extends Request {
   cookies: {

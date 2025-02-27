@@ -5,8 +5,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { COOKIE_REFRESH_TOKEN } from '../auth.api.constants';
 import { AuthService } from '../auth.service';
-import { AuthUserRefreshPayloadSigned } from '../types/auth';
+import { AuthUserPayloadRefreshSigned } from '../types/auth';
 import { RequestWithCookie } from '../types/request';
+import { User } from '../../user/user.entity';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
@@ -29,7 +30,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
     return token;
   }
 
-  async validate(payload: AuthUserRefreshPayloadSigned) {
+  async validate(payload: AuthUserPayloadRefreshSigned): Promise<User> {
     return await this.authService.getUserBySub(payload.sub);
   }
 }

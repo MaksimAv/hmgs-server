@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthUserAccessPayloadSigned } from '../types/auth';
+import { AuthUserPayloadSigned } from '../types/auth';
 
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(Strategy, 'access') {
@@ -14,7 +14,7 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'access') {
     });
   }
 
-  validate(payload: AuthUserAccessPayloadSigned) {
+  validate(payload: AuthUserPayloadSigned): AuthUserPayloadSigned {
     return payload;
   }
 }

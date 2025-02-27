@@ -55,15 +55,15 @@ export class AuthService {
     }
   }
 
-  private async generateUserTokenPair(user: User): Promise<AuthTokenPair> {
-    const payload: AuthUserPayload = {
-      sub: user.sub,
-      role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    };
-    const pair = await this.tokenService.generatePair(payload);
-    return pair;
+  private async generateUserTokenPair(
+    payload: AuthUserPayload,
+  ): Promise<AuthTokenPair> {
+    return await this.tokenService.generatePair({
+      sub: payload.sub,
+      role: payload.role,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+    });
   }
 
   private async validatePassword(

@@ -3,9 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import {
   AuthTokenPair,
-  AuthUserAccessPayload,
   AuthUserPayload,
-  AuthUserRefreshPayload,
+  AuthUserPayloadRefresh,
 } from '../../types/auth';
 
 @Injectable()
@@ -40,7 +39,7 @@ export class TokenService {
     };
   }
 
-  async generateAccess({ sub, role }: AuthUserAccessPayload): Promise<string> {
+  async generateAccess({ sub, role }: AuthUserPayload): Promise<string> {
     return await this.jwtService.signAsync(
       { role },
       {
@@ -51,7 +50,7 @@ export class TokenService {
     );
   }
 
-  async generateRefresh({ sub }: AuthUserRefreshPayload): Promise<string> {
+  async generateRefresh({ sub }: AuthUserPayloadRefresh): Promise<string> {
     return await this.jwtService.signAsync(
       {},
       {

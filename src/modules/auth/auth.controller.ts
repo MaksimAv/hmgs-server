@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -11,12 +12,15 @@ import { Reflector } from '@nestjs/core';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JSON_ACCESS_TOKEN } from './auth.api.constants';
-import { ReqUser } from '../../shared/decorators/req.user.decorator';
+import { ReqUser } from '../../shared/decorators/req-user.decorator';
 import { User } from '../user/user.entity';
 import { LocalGuard } from './guards/local.guard';
 import { RefreshGuard } from './guards/refresh.guard';
 import { RegistrationUserDto } from './dto/registration-user.dto';
 import { CookieManagerService } from './modules/cookie-manager/cookie.manager.service';
+import { AuthUserPayload } from './types/auth';
+import { ApiBearerAuth, ApiBody, ApiCookieAuth } from '@nestjs/swagger';
+import { LoginUserDto } from './dto/login-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -38,6 +42,7 @@ export class AuthController {
   }
 
   @Post('sign-in')
+  @ApiBody({ type: LoginUserDto })
   @UseGuards(LocalGuard)
   async login(
     @Res({ passthrough: true }) res: Response,
@@ -50,6 +55,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiCookieAuth()
   @UseGuards(RefreshGuard)
   async refresh(
     @Res({ passthrough: true }) res: Response,
@@ -62,11 +68,18 @@ export class AuthController {
   }
 
   @Post('sign-out')
+  @ApiCookieAuth()
   @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   logout(@Res({ passthrough: true }) res: Response) {
     const path = this.getPath();
     this.cookieMangerService.clearAuthCookie(res, path);
+  }
+
+  @Get('payload')
+  @ApiBearerAuth()
+  getPayload(@ReqUser() user: AuthUserPayload) {
+    return user;
   }
 
   private getPath() {
