@@ -183,10 +183,8 @@ export class RoomStatusService {
   private getUnavailabilityStatuses() {
     return [
       RoomStatusEnum.BOOKED,
-      RoomStatusEnum.LONG_STAYING,
       RoomStatusEnum.MAINTENANCE,
       RoomStatusEnum.OUT_OF_ORDER,
-      RoomStatusEnum.STAYING,
       RoomStatusEnum.RESERVED,
     ];
   }
