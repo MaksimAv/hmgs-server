@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import { TokenService } from '../token/token.service';
 import { COOKIE_REFRESH_TOKEN } from '../../auth.api.constants';
-import { timeToMilliseconds } from '../../../../shared/utils/time.to.milliseconds';
+import { timeToMilliseconds } from '../../../../shared/utils/time.utils';
 
 @Injectable()
 export class CookieManagerService {
