@@ -7,7 +7,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { TokenModule } from './modules/token/token.module';
-import { CookieManagerModule } from './modules/cookie-manager/cookie.manager.module';
+import { CookieManagerModule } from './modules/cookie-manager/cookie-manager.module';
 
 const STRATEGIES = [LocalStrategy, JwtRefreshStrategy, JwtAccessStrategy];
 

@@ -14,3 +14,8 @@ export const timeToMilliseconds = (time: string) => {
 
   return num * unitToMs[unit];
 };
+
+export const calculateDaysBetween = (start: Date, end: Date): number => {
+  const timeDiff = new Date(end).getTime() - new Date(start).getTime();
+  return timeDiff / (1000 * 3600 * 24);
+};

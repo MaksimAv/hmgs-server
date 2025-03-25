@@ -11,6 +11,8 @@ import { addDays, formatISO, isAfter, isBefore, subDays } from 'date-fns';
 import { RoomService } from '../room/room.service';
 import { RoomDatesPeriod } from '../room/types/room';
 import { RoomPrice } from './room-price.entity';
+import { Room } from '../room/room.entity';
+import { calculateDaysBetween } from '../../shared/utils/date-time.utils';
 
 @Injectable()
 export class RoomPriceService {
@@ -78,6 +80,47 @@ export class RoomPriceService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async calculateRoomPrice(
+    room: Room,
+    period: RoomDatesPeriod,
+  ): Promise<number> {
+    const roomPrices = await this.getByPeriod(room.id, period);
+
+    let totalPrice = 0;
+    let currentStartDate = period.startDate;
+    const endDate = period.endDate;
+
+    if (roomPrices.length === 0) {
+      const daysBetween = calculateDaysBetween(currentStartDate, endDate);
+      return daysBetween * room.regularPrice;
+    }
+
+    for (const roomPrice of roomPrices) {
+      if (currentStartDate < roomPrice.startDate) {
+        const daysBetween = calculateDaysBetween(
+          currentStartDate,
+          roomPrice.startDate,
+        );
+        totalPrice += daysBetween * room.regularPrice;
+        currentStartDate = roomPrice.startDate;
+      }
+
+      const roomPriceDays = calculateDaysBetween(
+        currentStartDate,
+        roomPrice.startDate,
+      );
+      totalPrice += roomPriceDays * roomPrice.price;
+      currentStartDate = roomPrice.endDate;
+    }
+
+    if (currentStartDate < endDate) {
+      const remainingDays = calculateDaysBetween(currentStartDate, endDate);
+      totalPrice += remainingDays * room.regularPrice;
+    }
+
+    return totalPrice;
   }
 
   private async getOverlaps(

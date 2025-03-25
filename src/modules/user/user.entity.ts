@@ -5,8 +5,10 @@ import {
   BaseEntity,
   CreateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { UserRoleEnum } from './user-role.enum';
+import { Booking } from '../booking/booking.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -46,14 +48,17 @@ export class User extends BaseEntity {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'time with time zone', nullable: true })
+  @Column({ type: 'timestamp with time zone', nullable: true })
   lastLogin: Date;
 
-  @Column({ type: 'time with time zone', nullable: true })
+  @Column({ type: 'timestamp with time zone', nullable: true })
   disabledAt: Date;
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @OneToMany(() => Booking, (booking) => booking.user, { nullable: true })
+  bookings?: Booking[];
 
   getFullName(): string {
     return [this.firstName, this.middleName, this.lastName]

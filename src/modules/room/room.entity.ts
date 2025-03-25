@@ -11,6 +11,7 @@ import { RoomCategory } from '../room-category/room-category.entity';
 import { RoomPrice } from '../room-price/room-price.entity';
 import { RoomStatus } from '../room-status/room-status.entity';
 import { RoomStatusEnum } from '../room-status/room-status.enum';
+import { BookingRoom } from '../booking-room/booking-room.entity';
 
 // TODO: RoomAmenity - included in the price, for example: wifi, pool, air conditioning.
 // TODO: RoomFeatures - things that can be purchased for a some price, such as breakfast, bathhouse
@@ -83,4 +84,7 @@ export class Room extends BaseEntity {
 
   @OneToMany(() => RoomStatus, (roomStatus) => roomStatus.room)
   roomStatus: RoomStatus[];
+
+  @OneToMany(() => BookingRoom, (bookingRoom) => bookingRoom.room)
+  bookingRooms: BookingRoom[];
 }

@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { RoomPriceModule } from './modules/room-price/room-price.module';
 import { RoomStatusModule } from './modules/room-status/room-status.module';
+import { BookingRoomModule } from './modules/booking-room/booking-room.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RoomStatusModule } from './modules/room-status/room-status.module';
     UserModule,
     AuthModule,
     BookingModule,
+    BookingRoomModule,
   ],
   providers: [
     {

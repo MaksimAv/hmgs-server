@@ -5,6 +5,7 @@ import {
   EntityManager,
   LessThanOrEqual,
   MoreThanOrEqual,
+  QueryRunner,
 } from 'typeorm';
 import { RoomStatus } from './room-status.entity';
 import { Injectable, NotFoundException } from '@nestjs/common';
@@ -57,11 +58,13 @@ export class RoomStatusService {
     roomId: number,
     period: RoomDatesPeriod,
     status: RoomStatusEnum,
-  ): Promise<void> {
+    externalQueryRunner?: QueryRunner,
+  ): Promise<RoomStatus> {
     const isRoomExist = await this.roomService.isExistById(roomId);
     if (!isRoomExist) throw new NotFoundException();
 
-    const queryRunner = this.dataSource.createQueryRunner();
+    const queryRunner =
+      externalQueryRunner ?? this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
@@ -76,14 +79,34 @@ export class RoomStatusService {
         await this.splitOverlapRoomStatus(overlap, period, queryRunner.manager);
       }
 
-      await this.createRoomStatus(roomId, period, status, queryRunner.manager);
+      const newRoomStatus = await this.createRoomStatus(
+        roomId,
+        period,
+        status,
+        queryRunner.manager,
+      );
+
       await queryRunner.commitTransaction();
+      return newRoomStatus;
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
     } finally {
-      await queryRunner.release();
+      if (!externalQueryRunner) await queryRunner.release();
     }
+  }
+
+  async setRoomStatusBooked(
+    roomId: number,
+    period: RoomDatesPeriod,
+    queryRunner: QueryRunner,
+  ): Promise<RoomStatus> {
+    return await this.setRoomStatus(
+      roomId,
+      period,
+      RoomStatusEnum.BOOKED,
+      queryRunner,
+    );
   }
 
   private async getOverlapRoomStatus(
