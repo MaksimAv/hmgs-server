@@ -64,12 +64,12 @@ describe('Room Api (e2e)', () => {
       {
         startDate: '2025-01-01T14:00:00.000Z',
         endDate: '2025-01-07T12:00:00.000Z',
-        status: RoomStatusRequestEnum.BOOKED,
+        status: RoomStatusRequestEnum.OUT_OF_ORDER,
       },
       {
         startDate: '2025-01-07T14:00:00.000Z',
         endDate: '2025-01-10T12:00:00.000Z',
-        status: RoomStatusRequestEnum.BOOKED,
+        status: RoomStatusRequestEnum.OUT_OF_ORDER,
       },
       {
         startDate: '2025-01-07T14:00:00.000Z',

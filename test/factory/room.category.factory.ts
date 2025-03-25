@@ -1,12 +1,11 @@
 import { faker } from '@faker-js/faker';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { RoomCategory } from '../../src/modules/room-category/room-category.entity';
+import { AbstractEntityFactory } from './abstract';
 
-export class RoomCategoryFactory {
-  private repository: Repository<RoomCategory>;
-
-  constructor(private dataSource: DataSource) {
-    this.repository = this.dataSource.getRepository(RoomCategory);
+export class RoomCategoryFactory extends AbstractEntityFactory<RoomCategory> {
+  constructor(dataSource: DataSource) {
+    super(RoomCategory, dataSource);
   }
 
   async create(overrides: Partial<RoomCategory> = {}): Promise<RoomCategory> {

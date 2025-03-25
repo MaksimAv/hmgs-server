@@ -1,11 +1,11 @@
-import { DataSource, ObjectLiteral, Repository } from 'typeorm';
+import { DataSource, ObjectLiteral, Repository, EntityTarget } from 'typeorm';
 
 export abstract class AbstractEntityFactory<T extends ObjectLiteral> {
   protected repository: Repository<T>;
 
   constructor(
+    protected entity: EntityTarget<T>,
     protected dataSource: DataSource,
-    protected entity: new () => T,
   ) {
     this.repository = this.dataSource.getRepository(entity);
   }

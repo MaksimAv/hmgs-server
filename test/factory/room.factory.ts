@@ -1,17 +1,16 @@
 import { faker } from '@faker-js/faker';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { RoomCategoryFactory } from './room.category.factory';
 import { Room } from '../../src/modules/room/room.entity';
+import { AbstractEntityFactory } from './abstract';
 
 type RoomRelationsIds = {
   categoryId: number;
 };
 
-export class RoomFactory {
-  private roomRepository: Repository<Room>;
-
-  constructor(private dataSource: DataSource) {
-    this.roomRepository = this.dataSource.getRepository(Room);
+export class RoomFactory extends AbstractEntityFactory<Room> {
+  constructor(dataSource: DataSource) {
+    super(Room, dataSource);
   }
 
   async create(overrides: Partial<Room> = {}): Promise<Room> {
@@ -30,7 +29,7 @@ export class RoomFactory {
       const newRoom = this.createEntity(relationIds, overrides);
       newRoomsToSave.push(newRoom);
     }
-    return await this.roomRepository.save(newRoomsToSave);
+    return await this.repository.save(newRoomsToSave);
   }
 
   createEntity(
@@ -38,7 +37,7 @@ export class RoomFactory {
     overrides: Partial<Room> = {},
   ): Room {
     const title = faker.word.words();
-    return this.roomRepository.create({
+    return this.repository.create({
       title,
       slug: faker.helpers.slugify(title),
       description: faker.lorem.sentences(),
