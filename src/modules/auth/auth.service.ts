@@ -55,6 +55,15 @@ export class AuthService {
     }
   }
 
+  async verifyUser(user: User): Promise<Pick<User, 'isVerified'>> {
+    const isVerified = this.checkUserVerify(user);
+    if (!isVerified) {
+      user.isVerified = true;
+      await user.save();
+    }
+    return { isVerified: user.isVerified };
+  }
+
   private async generateUserTokenPair(
     payload: AuthUserPayload,
   ): Promise<AuthTokenPair> {
@@ -78,5 +87,9 @@ export class AuthService {
     const salt = 10;
     const hash = await bcrypt.hash(password, salt);
     return hash;
+  }
+
+  checkUserVerify(user: User): boolean {
+    return user.isVerified;
   }
 }

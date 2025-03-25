@@ -21,6 +21,8 @@ import { CookieManagerService } from './modules/cookie-manager/cookie-manager.se
 import { AuthUserPayload } from './types/auth';
 import { ApiBearerAuth, ApiBody, ApiCookieAuth } from '@nestjs/swagger';
 import { LoginUserDto } from './dto/login-user.dto';
+import { Protected } from '../../shared/decorators/protected.decorator';
+import { ReqUserPayload } from '../../shared/decorators/req-user-payload.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -71,10 +73,18 @@ export class AuthController {
     this.cookieMangerService.clearAuthCookie(res, path);
   }
 
+  @Post('verify')
+  @ApiBearerAuth()
+  @Protected()
+  async verify(@ReqUser() user: User) {
+    return await this.authService.verifyUser(user);
+  }
+
   @Get('payload')
   @ApiBearerAuth()
-  getPayload(@ReqUser() user: AuthUserPayload) {
-    return user;
+  @Protected('payload')
+  getPayload(@ReqUserPayload() payload: AuthUserPayload) {
+    return payload;
   }
 
   private getPath() {

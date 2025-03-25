@@ -8,13 +8,19 @@ import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { TokenModule } from './modules/token/token.module';
 import { CookieManagerModule } from './modules/cookie-manager/cookie-manager.module';
+import { JwtAccessWithUserStrategy } from './strategies/jwt-access-with-user.strategy';
 
-const STRATEGIES = [LocalStrategy, JwtRefreshStrategy, JwtAccessStrategy];
+const STRATEGIES = [
+  LocalStrategy,
+  JwtRefreshStrategy,
+  JwtAccessStrategy,
+  JwtAccessWithUserStrategy,
+];
 
 @Module({
   imports: [UserModule, PassportModule, TokenModule, CookieManagerModule],
   controllers: [AuthController],
-  providers: [AuthService, ...STRATEGIES],
+  providers: [...STRATEGIES, AuthService],
   exports: [AuthService],
 })
 export class AuthModule {}

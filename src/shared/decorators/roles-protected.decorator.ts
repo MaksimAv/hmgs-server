@@ -1,11 +1,16 @@
-// roles.decorator.ts
 import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard';
 import { UserRoleType } from '../../modules/user/types/user';
-import { AccessGuard } from '../../modules/auth/guards/access.guard';
+import { Protected } from './protected.decorator';
 
-export const RolesProtected = (...roles: UserRoleType[]) =>
+type UserInfo = 'payload' | 'loadUser';
+
+export const RolesProtected = (
+  roles: UserRoleType[],
+  userInfo: UserInfo = 'loadUser',
+) =>
   applyDecorators(
+    Protected(userInfo),
     SetMetadata('roles', roles),
-    UseGuards(AccessGuard, RolesGuard),
+    UseGuards(RolesGuard),
   );
