@@ -34,7 +34,7 @@ export class BookingRoomService {
     };
     try {
       for (const room of rooms) {
-        const roomPrice = await this.roomPriceService.calculateRoomPrice(
+        const roomPrice = await this.roomPriceService.calculatePrice(
           room,
           bookingPeriod,
         );

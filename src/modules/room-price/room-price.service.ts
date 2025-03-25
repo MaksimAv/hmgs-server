@@ -4,6 +4,7 @@ import {
   EntityManager,
   LessThanOrEqual,
   MoreThanOrEqual,
+  QueryRunner,
   Repository,
 } from 'typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
@@ -49,43 +50,7 @@ export class RoomPriceService {
     return price;
   }
 
-  async setByPeriod(
-    roomId: number,
-    period: RoomDatesPeriod,
-    price: number,
-  ): Promise<void> {
-    const isRoomExist = await this.roomService.isExistById(roomId);
-    if (!isRoomExist) throw new NotFoundException();
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const overlaps = await this.getOverlaps(
-        roomId,
-        period,
-        queryRunner.manager,
-      );
-
-      for (const overlap of overlaps) {
-        await this.splitOverlap(overlap, period, queryRunner.manager);
-      }
-
-      await this.create(roomId, period, price, queryRunner.manager);
-      await queryRunner.commitTransaction();
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async calculateRoomPrice(
-    room: Room,
-    period: RoomDatesPeriod,
-  ): Promise<number> {
+  async calculatePrice(room: Room, period: RoomDatesPeriod): Promise<number> {
     const roomPrices = await this.getByPeriod(room.id, period);
 
     let totalPrice = 0;
@@ -123,6 +88,34 @@ export class RoomPriceService {
     return totalPrice;
   }
 
+  async set(
+    roomId: number,
+    period: RoomDatesPeriod,
+    price: number,
+    externalQueryRunner?: QueryRunner,
+  ): Promise<RoomPrice> {
+    const isRoomExist = await this.roomService.isExistById(roomId);
+    if (!isRoomExist) throw new NotFoundException();
+
+    const queryRunner =
+      externalQueryRunner ?? this.dataSource.createQueryRunner();
+    const manager = queryRunner.manager;
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const overlaps = await this.getOverlaps(roomId, period, manager);
+      await this.splitOverlaps(overlaps, period, manager);
+      const newPrice = await this.saveNew(roomId, period, price, manager);
+      await queryRunner.commitTransaction();
+      return newPrice;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      if (!externalQueryRunner) await queryRunner.release();
+    }
+  }
+
   private async getOverlaps(
     roomId: number,
     period: RoomDatesPeriod,
@@ -138,65 +131,48 @@ export class RoomPriceService {
     });
   }
 
-  private async splitOverlap(
-    exist: RoomPrice,
+  private async splitOverlaps(
+    existingPrices: RoomPrice[],
     newPeriod: RoomDatesPeriod,
     manager: EntityManager,
   ) {
-    const roomId = exist.roomId;
-    await manager.remove(exist);
+    for (const exist of existingPrices) {
+      const roomId = exist.roomId;
 
-    // existStartDate > newStartDate and existEndDate < newEndDate
-    if (
-      isAfter(exist.startDate, newPeriod.startDate) &&
-      isBefore(exist.endDate, newPeriod.endDate)
-    ) {
-      return;
-    }
+      await manager.remove(exist);
 
-    // existStartDate < newStartDate and existEndDate > newEndDate
-    if (
-      isBefore(exist.startDate, newPeriod.startDate) &&
-      isAfter(exist.endDate, newPeriod.endDate)
-    ) {
-      const newBeforePeriod = this.repository.create({
-        ...exist,
-        endDate: formatISO(subDays(newPeriod.startDate, 1)),
-        room: { id: roomId },
-      });
-      const newAfterPeriod = this.repository.create({
-        ...exist,
-        startDate: formatISO(addDays(newPeriod.endDate, 1)),
-        room: { id: roomId },
-      });
-      await manager.save([newBeforePeriod, newAfterPeriod]);
-      return;
-    }
+      // existStartDate > newStartDate and
+      // existEndDate < newEndDate
+      const isFullOverlap =
+        isAfter(exist.startDate, newPeriod.startDate) &&
+        isBefore(exist.endDate, newPeriod.endDate);
 
-    // existStartDate < newStartDate
-    if (isBefore(exist.startDate, newPeriod.startDate)) {
-      const before = this.repository.create({
-        ...exist,
-        endDate: formatISO(subDays(newPeriod.startDate, 1)),
-        room: { id: roomId },
-      });
-      await manager.save(before);
-      return;
-    }
-
-    // existStartDate > newEndDate
-    if (isAfter(exist.endDate, newPeriod.endDate)) {
-      const after = this.repository.create({
-        ...exist,
-        startDate: formatISO(addDays(newPeriod.endDate, 1)),
-        room: { id: roomId },
-      });
-      await manager.save(after);
-      return;
+      if (!isFullOverlap) {
+        const newEntries: RoomPrice[] = [];
+        // existStartDate < newStartDate
+        if (isBefore(exist.startDate, newPeriod.startDate)) {
+          const before = this.repository.create({
+            ...exist,
+            endDate: formatISO(subDays(newPeriod.startDate, 1)),
+            room: { id: roomId },
+          });
+          newEntries.push(before);
+        }
+        // existStartDate > newEndDate
+        if (isAfter(exist.endDate, newPeriod.endDate)) {
+          const after = this.repository.create({
+            ...exist,
+            startDate: formatISO(addDays(newPeriod.endDate, 1)),
+            room: { id: roomId },
+          });
+          newEntries.push(after);
+        }
+        await manager.save(newEntries);
+      }
     }
   }
 
-  private async create(
+  private async saveNew(
     roomId: number,
     newPeriod: RoomDatesPeriod,
     newPrice: number,

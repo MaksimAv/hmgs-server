@@ -222,7 +222,7 @@ describe('Room Api (e2e)', () => {
     it('Set price at 2500 from 01.01 to 01.31', async () => {
       const data = TEST_DATA[0];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/price`)
+        .post(`/room-prices/${roomId}`)
         .send(data)
         .expect(201);
 
@@ -235,7 +235,7 @@ describe('Room Api (e2e)', () => {
     it('Set price at 2700 from 01.01 to 05.01', async () => {
       const data = TEST_DATA[1];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/price`)
+        .post(`/room-prices/${roomId}`)
         .send(data)
         .expect(201);
 
@@ -254,7 +254,7 @@ describe('Room Api (e2e)', () => {
     it('Set price at 2400 from 03.01 to 07.01', async () => {
       const data = TEST_DATA[2];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/price`)
+        .post(`/room-prices/${roomId}`)
         .send(data)
         .expect(201);
 
@@ -278,7 +278,7 @@ describe('Room Api (e2e)', () => {
     it('Set price at 2200 from 10.01 to 15.01', async () => {
       const data = TEST_DATA[3];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/price`)
+        .post(`/room-prices/${roomId}`)
         .send(data)
         .expect(201);
 
@@ -312,7 +312,7 @@ describe('Room Api (e2e)', () => {
     it('Set price at 2000 from 06.01 to 12.01', async () => {
       const data = TEST_DATA[4];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/price`)
+        .post(`/room-prices/${roomId}`)
         .send(data)
         .expect(201);
 

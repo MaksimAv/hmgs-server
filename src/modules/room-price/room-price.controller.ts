@@ -5,13 +5,13 @@ import { SetRoomPriceDto } from './dto/set-room-price.dto';
 import { RoomDatesPeriod } from '../room/types/room';
 import { singleDateSchema } from '../../shared/validation/single.date.schema';
 
-@Controller('rooms')
+@Controller('room-prices')
 export class RoomPriceController {
   constructor(private readonly roomPriceService: RoomPriceService) {}
 
-  @Get(':id/price/period')
+  @Get(':roomId')
   async getRoomPriceByPeriod(
-    @Param('id') roomId: number,
+    @Param('roomId') roomId: number,
     @Query('startDate') start: string,
     @Query('endDate') end: string,
   ): Promise<GetRoomPriceResponse[]> {
@@ -21,25 +21,24 @@ export class RoomPriceController {
     return await this.roomPriceService.getByPeriod(roomId, period);
   }
 
-  @Get(':id/price')
+  @Get(':roomId/day')
   async getRoomPriceDate(
-    @Param('id') roomId: number,
+    @Param('roomId') roomId: number,
     @Query('date') targetDate: string,
   ): Promise<GetRoomPriceResponse> {
     const date = singleDateSchema.parse(targetDate);
     return await this.roomPriceService.getByDate(roomId, date);
   }
 
-  @Post(':id/price')
+  @Post(':roomId')
   async setRoomPrice(
-    @Param('id') roomId: number,
+    @Param('roomId') roomId: number,
     @Body() body: SetRoomPriceDto,
   ) {
     const period: RoomDatesPeriod = {
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
     };
-    await this.roomPriceService.setByPeriod(roomId, period, body.price);
-    return { success: true };
+    return await this.roomPriceService.set(roomId, period, body.price);
   }
 }
