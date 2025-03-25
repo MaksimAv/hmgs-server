@@ -17,7 +17,7 @@ import { User } from '../user/user.entity';
 import { LocalGuard } from './guards/local.guard';
 import { RefreshGuard } from './guards/refresh.guard';
 import { RegistrationUserDto } from './dto/registration-user.dto';
-import { CookieManagerService } from './modules/cookie-manager/cookie.manager.service';
+import { CookieManagerService } from './modules/cookie-manager/cookie-manager.service';
 import { AuthUserPayload } from './types/auth';
 import { ApiBearerAuth, ApiBody, ApiCookieAuth } from '@nestjs/swagger';
 import { LoginUserDto } from './dto/login-user.dto';

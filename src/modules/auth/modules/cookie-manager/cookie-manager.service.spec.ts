@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CookieManagerService } from './cookie.manager.service';
+import { CookieManagerService } from './cookie-manager.service';
 
 describe('CookieManagerService', () => {
   let service: CookieManagerService;

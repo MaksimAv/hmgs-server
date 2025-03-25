@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CookieManagerService } from './cookie.manager.service';
+import { CookieManagerService } from './cookie-manager.service';
 import { TokenModule } from '../token/token.module';
 
 @Module({
