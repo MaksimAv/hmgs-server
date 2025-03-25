@@ -5,33 +5,30 @@ import { SetRoomStatusDto } from './dto/set-room-status.dto';
 import { RoomStatusEnum } from './room-status.enum';
 import { singleDateSchema } from '../../shared/validation/single.date.schema';
 
-@Controller('rooms')
+@Controller('room-statuses')
 export class RoomStatusController {
   constructor(private readonly roomStatusService: RoomStatusService) {}
 
-  @Get(':id/status/period')
-  async getRoomStatusesByPeriod(
-    @Param('id') roomId: number,
+  @Get(':roomId')
+  async getOne(
+    @Param('roomId') roomId: number,
     @Query('startDate') start: string,
     @Query('endDate') end: string,
   ): Promise<any> {
     const startDate = singleDateSchema.parse(start);
     const endDate = singleDateSchema.parse(end);
     const period: RoomDatesPeriod = { startDate, endDate };
-    return await this.roomStatusService.getRoomStatusesByPeriod(roomId, period);
+    return await this.roomStatusService.getByPeriod(roomId, period);
   }
 
-  @Post(':id/status')
-  async setRoomStatus(
-    @Param('id') roomId: number,
-    @Body() body: SetRoomStatusDto,
-  ) {
+  @Post(':roomId')
+  async set(@Param('roomId') roomId: number, @Body() body: SetRoomStatusDto) {
     const period: RoomDatesPeriod = {
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
     };
     const status = body.status as unknown as RoomStatusEnum;
-    await this.roomStatusService.setRoomStatus(roomId, period, status);
+    await this.roomStatusService.set(roomId, period, status);
     return { success: true };
   }
 }

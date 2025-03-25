@@ -38,12 +38,11 @@ export class BookingRoomService {
           room,
           bookingPeriod,
         );
-        const roomBookedStatus =
-          await this.roomStatusService.setRoomStatusBooked(
-            room.id,
-            bookingPeriod,
-            queryRunner,
-          );
+        const roomBookedStatus = await this.roomStatusService.setBooked(
+          room.id,
+          bookingPeriod,
+          queryRunner,
+        );
         bookingRoomsToSave.push(
           this.bookingRoomRepository.create({
             booking: { id: booking.id },

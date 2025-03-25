@@ -40,7 +40,7 @@ export class RoomStatusService {
     return true;
   }
 
-  async getRoomStatusesByPeriod(
+  async getByPeriod(
     roomId: number,
     period: RoomDatesPeriod,
   ): Promise<RoomStatus[]> {
@@ -54,7 +54,7 @@ export class RoomStatusService {
       .getMany();
   }
 
-  async setRoomStatus(
+  async set(
     roomId: number,
     period: RoomDatesPeriod,
     status: RoomStatusEnum,
@@ -65,29 +65,15 @@ export class RoomStatusService {
 
     const queryRunner =
       externalQueryRunner ?? this.dataSource.createQueryRunner();
+    const manager = queryRunner.manager;
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
-      const overlaps = await this.getOverlapRoomStatus(
-        roomId,
-        period,
-        queryRunner.manager,
-      );
-
-      for (const overlap of overlaps) {
-        await this.splitOverlapRoomStatus(overlap, period, queryRunner.manager);
-      }
-
-      const newRoomStatus = await this.createRoomStatus(
-        roomId,
-        period,
-        status,
-        queryRunner.manager,
-      );
-
+      const overlaps = await this.getOverlaps(roomId, period, manager);
+      await this.splitOverlaps(overlaps, period, manager);
+      const newStatus = await this.saveNew(roomId, period, status, manager);
       await queryRunner.commitTransaction();
-      return newRoomStatus;
+      return newStatus;
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
@@ -96,20 +82,28 @@ export class RoomStatusService {
     }
   }
 
-  async setRoomStatusBooked(
+  async setReserved(
     roomId: number,
     period: RoomDatesPeriod,
     queryRunner: QueryRunner,
   ): Promise<RoomStatus> {
-    return await this.setRoomStatus(
-      roomId,
-      period,
-      RoomStatusEnum.BOOKED,
-      queryRunner,
-    );
+    return await this.set(roomId, period, RoomStatusEnum.RESERVED, queryRunner);
   }
 
-  private async getOverlapRoomStatus(
+  async update(
+    roomStatuses: RoomStatus[],
+    newStatus: RoomStatusEnum,
+    manager: EntityManager = this.roomStatusRepository.manager,
+  ) {
+    for (const roomStatus of roomStatuses) roomStatus.status = newStatus;
+    return await manager.save(roomStatuses);
+  }
+
+  async updateToBooked(roomStatuses: RoomStatus[], manager: EntityManager) {
+    return await this.update(roomStatuses, RoomStatusEnum.BOOKED, manager);
+  }
+
+  private async getOverlaps(
     roomId: number,
     period: RoomDatesPeriod,
     manager: EntityManager,
@@ -124,65 +118,48 @@ export class RoomStatusService {
     });
   }
 
-  private async splitOverlapRoomStatus(
-    exist: RoomStatus,
+  private async splitOverlaps(
+    existingStatuses: RoomStatus[],
     newPeriod: RoomDatesPeriod,
     manager: EntityManager,
-  ) {
-    const roomId = exist.roomId;
-    await manager.remove(exist);
+  ): Promise<void> {
+    for (const exist of existingStatuses) {
+      const roomId = exist.roomId;
 
-    // existStartDateTime > newStartDateTime and existEndDateTime < newEndDateTime
-    if (
-      isAfter(exist.startDateTime, newPeriod.startDate) &&
-      isBefore(exist.endDateTime, newPeriod.endDate)
-    ) {
-      return;
-    }
+      await manager.remove(exist);
 
-    // existStartDateTime < newStartDateTime and existEndDateTime > newEndDateTime
-    if (
-      isBefore(exist.startDateTime, newPeriod.startDate) &&
-      isAfter(exist.endDateTime, newPeriod.endDate)
-    ) {
-      const newBeforePeriod = this.roomStatusRepository.create({
-        ...exist,
-        endDateTime: formatISO(subMinutes(newPeriod.startDate, 1)),
-        room: { id: roomId },
-      });
-      const newAfterPeriod = this.roomStatusRepository.create({
-        ...exist,
-        startDateTime: formatISO(addMinutes(newPeriod.endDate, 1)),
-        room: { id: roomId },
-      });
-      await manager.save([newBeforePeriod, newAfterPeriod]);
-      return;
-    }
+      // existStartDateTime > newStartDateTime and
+      // existEndDateTime < newEndDateTime
+      const isFullOverlap =
+        isAfter(exist.startDateTime, newPeriod.startDate) &&
+        isBefore(exist.endDateTime, newPeriod.endDate);
 
-    // existStartDateTime < newStartDateTime
-    if (isBefore(exist.startDateTime, newPeriod.startDate)) {
-      const before = this.roomStatusRepository.create({
-        ...exist,
-        endDateTime: formatISO(subMinutes(newPeriod.startDate, 1)),
-        room: { id: roomId },
-      });
-      await manager.save(before);
-      return;
-    }
-
-    // existStartDateTime > newEndDateTime
-    if (isAfter(exist.endDateTime, newPeriod.endDate)) {
-      const after = this.roomStatusRepository.create({
-        ...exist,
-        startDateTime: formatISO(addMinutes(newPeriod.endDate, 1)),
-        room: { id: roomId },
-      });
-      await manager.save(after);
-      return;
+      if (!isFullOverlap) {
+        const newEntries: RoomStatus[] = [];
+        // existStartDateTime < newStartDateTime
+        if (isBefore(exist.startDateTime, newPeriod.startDate)) {
+          const before = this.roomStatusRepository.create({
+            ...exist,
+            endDateTime: formatISO(subMinutes(newPeriod.startDate, 1)),
+            room: { id: roomId },
+          });
+          newEntries.push(before);
+        }
+        // existStartDateTime > newEndDateTime
+        if (isAfter(exist.endDateTime, newPeriod.endDate)) {
+          const after = this.roomStatusRepository.create({
+            ...exist,
+            startDateTime: formatISO(addMinutes(newPeriod.endDate, 1)),
+            room: { id: roomId },
+          });
+          newEntries.push(after);
+        }
+        await manager.save(newEntries);
+      }
     }
   }
 
-  private async createRoomStatus(
+  private async saveNew(
     roomId: number,
     newPeriod: RoomDatesPeriod,
     newStatus: RoomStatusEnum,

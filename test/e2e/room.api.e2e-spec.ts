@@ -91,7 +91,7 @@ describe('Room Api (e2e)', () => {
     it('Set booked status', async () => {
       const data = TEST_DATA[0];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/status`)
+        .post(`/room-statuses/${roomId}`)
         .send(data)
         .expect(201);
 
@@ -107,7 +107,7 @@ describe('Room Api (e2e)', () => {
     it('Set new booked status', async () => {
       const data = TEST_DATA[1];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/status`)
+        .post(`/room-statuses/${roomId}`)
         .send(data)
         .expect(201);
 
@@ -123,7 +123,7 @@ describe('Room Api (e2e)', () => {
     it('Replace booked status on available', async () => {
       const data = TEST_DATA[2];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/status`)
+        .post(`/room-statuses/${roomId}`)
         .send(data)
         .expect(201);
 
@@ -164,7 +164,7 @@ describe('Room Api (e2e)', () => {
     it('Set maintenance status', async () => {
       const data = TEST_DATA[3];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/status`)
+        .post(`/room-statuses/${roomId}`)
         .send(data)
         .expect(201);
 
@@ -183,7 +183,7 @@ describe('Room Api (e2e)', () => {
     it('Extend maintenance status', async () => {
       const data = TEST_DATA[4];
       await request(app.getHttpServer())
-        .post(`/rooms/${roomId}/status`)
+        .post(`/room-statuses/${roomId}`)
         .send(data)
         .expect(201);
 
