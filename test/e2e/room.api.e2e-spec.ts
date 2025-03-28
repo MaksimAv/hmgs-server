@@ -62,33 +62,33 @@ describe('Room Api (e2e)', () => {
 
     const TEST_DATA = [
       {
-        startDate: '2025-01-01T14:00:00.000Z',
-        endDate: '2025-01-07T12:00:00.000Z',
+        startDate: '2025-01-01T14:00:00.000',
+        endDate: '2025-01-07T12:00:00.000',
         status: RoomStatusRequestEnum.OUT_OF_ORDER,
       },
       {
-        startDate: '2025-01-07T14:00:00.000Z',
-        endDate: '2025-01-10T12:00:00.000Z',
+        startDate: '2025-01-07T14:00:00.000',
+        endDate: '2025-01-10T12:00:00.000',
         status: RoomStatusRequestEnum.OUT_OF_ORDER,
       },
       {
-        startDate: '2025-01-07T14:00:00.000Z',
-        endDate: '2025-01-10T12:00:00.000Z',
+        startDate: '2025-01-07T14:00:00.000',
+        endDate: '2025-01-10T12:00:00.000',
         status: RoomStatusRequestEnum.AVAILABLE_FOR_BOOKING,
       },
       {
-        startDate: '2026-01-01T14:00:00.000Z',
-        endDate: '2026-01-05T12:00:00.000Z',
+        startDate: '2026-01-01T14:00:00.000',
+        endDate: '2026-01-05T12:00:00.000',
         status: RoomStatusRequestEnum.MAINTENANCE,
       },
       {
-        startDate: '2026-01-01T14:00:00.000Z',
-        endDate: '2026-01-08T12:00:00.000Z',
+        startDate: '2026-01-01T14:00:00.000',
+        endDate: '2026-01-08T12:00:00.000',
         status: RoomStatusRequestEnum.MAINTENANCE,
       },
     ];
 
-    it('Set booked status', async () => {
+    it('Set unavailable status', async () => {
       const data = TEST_DATA[0];
       await request(app.getHttpServer())
         .post(`/room-statuses/${roomId}`)
@@ -98,13 +98,17 @@ describe('Room Api (e2e)', () => {
       const statuses = await roomStatusRepository.find({
         order: { startDateTime: 'ASC' },
       });
-      expect(statuses[0].startDateTime.toISOString()).toBe(data.startDate);
-      expect(statuses[0].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[0].startDateTime.toISOString()).toBe(
+        new Date(data.startDate).toISOString(),
+      );
+      expect(statuses[0].endDateTime.toISOString()).toBe(
+        new Date(data.endDate).toISOString(),
+      );
       expect(statuses[0].status).toBe(data.status);
       expect(statuses[0].roomId).toBe(roomId);
     });
 
-    it('Set new booked status', async () => {
+    it('Set new unavailable status', async () => {
       const data = TEST_DATA[1];
       await request(app.getHttpServer())
         .post(`/room-statuses/${roomId}`)
@@ -114,13 +118,17 @@ describe('Room Api (e2e)', () => {
       const statuses = await roomStatusRepository.find({
         order: { startDateTime: 'ASC' },
       });
-      expect(statuses[1].startDateTime.toISOString()).toBe(data.startDate);
-      expect(statuses[1].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[1].startDateTime.toISOString()).toBe(
+        new Date(data.startDate).toISOString(),
+      );
+      expect(statuses[1].endDateTime.toISOString()).toBe(
+        new Date(data.endDate).toISOString(),
+      );
       expect(statuses[1].status).toBe(data.status);
       expect(statuses[1].roomId).toBe(roomId);
     });
 
-    it('Replace booked status on available', async () => {
+    it('Replace unavailable status on available', async () => {
       const data = TEST_DATA[2];
       await request(app.getHttpServer())
         .post(`/room-statuses/${roomId}`)
@@ -130,8 +138,12 @@ describe('Room Api (e2e)', () => {
       const statuses = await roomStatusRepository.find({
         order: { startDateTime: 'ASC' },
       });
-      expect(statuses[1].startDateTime.toISOString()).toBe(data.startDate);
-      expect(statuses[1].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[1].startDateTime.toISOString()).toBe(
+        new Date(data.startDate).toISOString(),
+      );
+      expect(statuses[1].endDateTime.toISOString()).toBe(
+        new Date(data.endDate).toISOString(),
+      );
       expect(statuses[1].status).toBe(data.status);
       expect(statuses[1].roomId).toBe(roomId);
     });
@@ -140,8 +152,8 @@ describe('Room Api (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get(`/rooms/available`)
         .query({
-          startDate: '2025-01-07T14:00:00.000Z',
-          endDate: '2025-01-15T12:00:00.000Z',
+          startDate: '2025-01-07T14:00:00.000',
+          endDate: '2025-01-15T12:00:00.000',
         })
         .expect(200);
 
@@ -153,15 +165,15 @@ describe('Room Api (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get(`/rooms/available`)
         .query({
-          startDate: '2025-01-01T14:00:00.000Z',
-          endDate: '2025-01-07T12:00:00.000Z',
+          startDate: '2025-01-01T14:00:00.000',
+          endDate: '2025-01-07T12:00:00.000',
         })
         .expect(200);
 
       expect(response.body.length).toBe(0);
     });
 
-    it('Set maintenance status', async () => {
+    it('Set another unavailable status', async () => {
       const data = TEST_DATA[3];
       await request(app.getHttpServer())
         .post(`/room-statuses/${roomId}`)
@@ -170,17 +182,22 @@ describe('Room Api (e2e)', () => {
 
       const statuses = await roomStatusRepository.find({
         where: {
-          startDateTime: MoreThanOrEqual(new Date('2026-01-01T00:00:00.000Z')),
+          startDateTime: MoreThanOrEqual(new Date('2026-01-01T00:00:00.000')),
         },
         order: { startDateTime: 'ASC' },
       });
-      expect(statuses[0].startDateTime.toISOString()).toBe(data.startDate);
-      expect(statuses[0].endDateTime.toISOString()).toBe(data.endDate);
+
+      expect(statuses[0].startDateTime.toISOString()).toBe(
+        new Date(data.startDate).toISOString(),
+      );
+      expect(statuses[0].endDateTime.toISOString()).toBe(
+        new Date(data.endDate).toISOString(),
+      );
       expect(statuses[0].status).toBe(data.status);
       expect(statuses[0].roomId).toBe(roomId);
     });
 
-    it('Extend maintenance status', async () => {
+    it('Extend unavailable status', async () => {
       const data = TEST_DATA[4];
       await request(app.getHttpServer())
         .post(`/room-statuses/${roomId}`)
@@ -189,12 +206,16 @@ describe('Room Api (e2e)', () => {
 
       const statuses = await roomStatusRepository.find({
         where: {
-          startDateTime: MoreThanOrEqual(new Date('2026-01-01T00:00:00.000Z')),
+          startDateTime: MoreThanOrEqual(new Date('2026-01-01T00:00:00.000')),
         },
         order: { startDateTime: 'ASC' },
       });
-      expect(statuses[0].startDateTime.toISOString()).toBe(data.startDate);
-      expect(statuses[0].endDateTime.toISOString()).toBe(data.endDate);
+      expect(statuses[0].startDateTime.toISOString()).toBe(
+        new Date(data.startDate).toISOString(),
+      );
+      expect(statuses[0].endDateTime.toISOString()).toBe(
+        new Date(data.endDate).toISOString(),
+      );
       expect(statuses[0].status).toBe(data.status);
       expect(statuses[0].roomId).toBe(roomId);
     });
