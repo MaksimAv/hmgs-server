@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { BookingRoom } from './booking-room.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { RoomStatusService } from '../room-status/room-status.service';
 import { Booking } from '../booking/booking.entity';
 import { Room } from '../room/room.entity';
@@ -21,10 +21,7 @@ export class BookingRoomService {
     private readonly bookingRoomRepository: Repository<BookingRoom>,
   ) {}
 
-  async createBookingRooms(
-    booking: Booking,
-    rooms: Room[],
-  ): Promise<BookingRoom[]> {
+  async create(booking: Booking, rooms: Room[]): Promise<BookingRoom[]> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.startTransaction();
     const bookingRoomsToSave: BookingRoom[] = [];
@@ -38,7 +35,7 @@ export class BookingRoomService {
           room,
           bookingPeriod,
         );
-        const roomBookedStatus = await this.roomStatusService.setBooked(
+        const roomStatusReserved = await this.roomStatusService.setReserved(
           room.id,
           bookingPeriod,
           queryRunner,
@@ -47,7 +44,7 @@ export class BookingRoomService {
           this.bookingRoomRepository.create({
             booking: { id: booking.id },
             room: { id: room.id },
-            roomStatus: roomBookedStatus,
+            roomStatus: roomStatusReserved,
             price: roomPrice,
           }),
         );
@@ -63,14 +60,32 @@ export class BookingRoomService {
     }
   }
 
+  async confirm(
+    bookingRooms: BookingRoom[],
+    manager: EntityManager = this.bookingRoomRepository.manager,
+  ): Promise<void> {
+    const statuses = bookingRooms.map((i) => i.roomStatus);
+    await this.roomStatusService.updateToBooked(statuses, manager);
+  }
+
+  async cancel(
+    bookingRooms: BookingRoom[],
+    manager: EntityManager = this.bookingRoomRepository.manager,
+  ): Promise<void> {
+    const statuses = bookingRooms.map((i) => i.roomStatus);
+    await manager.remove(bookingRooms);
+    await this.roomStatusService.updateToAvailable(statuses, manager);
+  }
+
   async getRoomsAvailableForBooking(
     roomIds: number[],
     period: RoomDatesPeriod,
   ) {
-    const availableRooms = await this.roomService.getAvailableByPeriod(period);
+    const availableRooms =
+      await this.roomService.getManyAvailableByPeriod(period);
     const availableRoomIds = new Set(availableRooms.map((room) => room.id));
-
     const missingRooms = roomIds.filter((id) => !availableRoomIds.has(id));
+
     if (missingRooms.length > 0) {
       throw new NotFoundException(
         `Rooms not available for booking: ${missingRooms.join(', ')}`,

@@ -1,10 +1,11 @@
-import { Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Room, RoomVisibilityEnum } from './room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { RoomStatusEnum } from '../room-status/room-status.enum';
 import { RoomDatesPeriod } from './types/room';
+import { RoomStatus } from '../room-status/room-status.entity';
 
 @Injectable()
 export class RoomService {
@@ -39,68 +40,68 @@ export class RoomService {
     return await newRoom.save();
   }
 
-  async getOneById(id: number): Promise<Room | null> {
+  async getOneById(id: number): Promise<Room> {
     const room = await this.roomRepository.findOne({ where: { id } });
+    if (!room) throw new NotFoundException();
     return room;
   }
 
-  async getMany(): Promise<Room[]> {
-    const rooms = await this.roomRepository.find();
-    return rooms;
+  // TODO: Create tests for getting rooms funcs by period
+
+  async getManyByPeriod(period: RoomDatesPeriod): Promise<Room[]> {
+    return await this.roomRepository.find({
+      where: {
+        roomStatus: {
+          startDateTime: LessThanOrEqual(period.endDate),
+          endDateTime: MoreThanOrEqual(period.startDate),
+        },
+      },
+      relations: { roomStatus: true },
+    });
   }
 
-  async getAvailableByPeriod(period: RoomDatesPeriod): Promise<Room[]> {
+  async getManyAvailableByPeriod(period: RoomDatesPeriod): Promise<Room[]> {
     const { startDate, endDate } = period;
-    const roomQuery = this.roomRepository
+
+    const roomsWithAvailableStatuses = await this.roomRepository
       .createQueryBuilder('room')
       .leftJoinAndSelect('room.roomStatus', 'roomStatus')
-      .where('room.regularIsAvailable = true');
+      .where((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('rs.roomId')
+          .from(RoomStatus, 'rs')
+          .where('rs.roomId = room.id')
+          .andWhere('rs.startDateTime <= :endDate', { endDate })
+          .andWhere('rs.endDateTime >= :startDate', { startDate })
+          .andWhere('rs.isAvailable = false')
+          .getQuery();
+        return `NOT EXISTS ${subQuery}`;
+      })
+      .andWhere('roomStatus.startDateTime <= :endDate', { endDate })
+      .andWhere('roomStatus.endDateTime >= :startDate', { startDate })
+      .andWhere('roomStatus.isAvailable = true')
+      .getMany();
 
-    const subQuery = roomQuery
-      .subQuery()
-      .select('rs.id')
-      .from('RoomStatus', 'rs')
-      .where('rs.roomId = room.id')
-      .andWhere('rs.isAvailable = false')
-      .andWhere('rs.startDateTime < :endDate')
-      .andWhere('rs.endDateTime > :startDate')
-      .getQuery();
-
-    roomQuery
-      .andWhere(`NOT EXISTS ${subQuery}`)
-      .setParameters({ startDate, endDate });
-
-    const rooms = await roomQuery.getMany();
-    return rooms;
-  }
-
-  async getUnavailableByPeriod(period: RoomDatesPeriod): Promise<Room[]> {
-    const { startDate, endDate } = period;
-    const roomQuery = this.roomRepository
+    const roomsWithoutStatuses = await this.roomRepository
       .createQueryBuilder('room')
-      .leftJoinAndSelect('room.roomStatus', 'roomStatus')
-      .where('room.regularIsAvailable = false');
+      .where((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('rs.roomId')
+          .from(RoomStatus, 'rs')
+          .where('rs.roomId = room.id')
+          .andWhere('rs.startDateTime <= :endDate', { endDate })
+          .andWhere('rs.endDateTime >= :startDate', { startDate })
+          .getQuery();
+        return `NOT EXISTS ${subQuery} AND room.regularIsAvailable = true`;
+      })
+      .getMany();
 
-    const subQuery = roomQuery
-      .subQuery()
-      .select('rs.id')
-      .from('RoomStatus', 'rs')
-      .where('rs.roomId = room.id')
-      .andWhere('rs.isAvailable = true')
-      .andWhere('rs.startDateTime < :endDate')
-      .andWhere('rs.endDateTime > :startDate')
-      .getQuery();
-
-    roomQuery
-      .andWhere(`NOT EXISTS ${subQuery}`)
-      .setParameters({ startDate, endDate });
-
-    const rooms = await roomQuery.getMany();
-    return rooms;
+    return [...roomsWithAvailableStatuses, ...roomsWithoutStatuses];
   }
 
   async isExistById(id: number): Promise<boolean> {
-    const room = await this.roomRepository.findOne({ where: { id } });
-    return Boolean(room);
+    return await this.roomRepository.exists({ where: { id } });
   }
 }

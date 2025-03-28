@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ZodValidationPipe } from 'nestjs-zod';
 import * as cookieParser from 'cookie-parser';
 import { setupSwagger } from './shared/swagger';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,7 +12,8 @@ async function bootstrap() {
 
   setupSwagger(app);
 
-  await app.listen(process.env.APP_PORT ?? 5001);
+  const port = app.get(ConfigService).get<number>('APP_PORT', 4999);
+  await app.listen(port);
 }
 
 void bootstrap();

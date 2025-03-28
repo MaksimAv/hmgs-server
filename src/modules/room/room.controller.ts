@@ -16,23 +16,18 @@ export class RoomController {
     const startDate = singleDateSchema.parse(start);
     const endDate = singleDateSchema.parse(end);
     const period: RoomDatesPeriod = { startDate, endDate };
-    return await this.roomService.getAvailableByPeriod(period);
-  }
-
-  @Get('unavailable')
-  async getUnavailableRoomsByPeriod(
-    @Query('startDate') start: string,
-    @Query('endDate') end: string,
-  ): Promise<any> {
-    const startDate = singleDateSchema.parse(start);
-    const endDate = singleDateSchema.parse(end);
-    const period: RoomDatesPeriod = { startDate, endDate };
-    return await this.roomService.getUnavailableByPeriod(period);
+    return await this.roomService.getManyAvailableByPeriod(period);
   }
 
   @Get()
-  async getMany() {
-    return await this.roomService.getMany();
+  async getMany(
+    @Query('startDate') start: string,
+    @Query('endDate') end: string,
+  ) {
+    const startDate = singleDateSchema.parse(start);
+    const endDate = singleDateSchema.parse(end);
+    const period: RoomDatesPeriod = { startDate, endDate };
+    return await this.roomService.getManyByPeriod(period);
   }
 
   @Get(':id')

@@ -15,10 +15,10 @@ export class RoomStatus extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: 'timestamp' })
   startDateTime: Date;
 
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: 'timestamp' })
   endDateTime: Date;
 
   @Column({

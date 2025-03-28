@@ -1,6 +1,6 @@
 services:
-  postgres_demo:
-    container_name: postgres_demo
+  hmgs_demo_postgres:
+    container_name: hmgs_demo_postgres
     image: postgres:16
     env_file:
       - .env.demo
@@ -9,14 +9,23 @@ services:
     ports:
       - 5433:5432
     volumes:
-      - postgres_demo:/var/lib/postgresql/data
+      - hmgs_demo_postgres:/var/lib/postgresql/data
     restart: on-failure
 
-  hmgs_demo:
-    container_name: hmgs_demo
+  hmgs_demo_redis:
+    container_name: hmgs_demo_redis
+    image: redis:latest
+    ports:
+      - 6380:6379
+    restart: on-failure
+
+  hmgs_demo_app:
+    container_name: hmgs_demo_app
     depends_on:
-      - postgres_demo
+      - hmgs_demo_postgres
+      - hmgs_demo_redis
     build:
+      context: .
       dockerfile: docker/demo/Dockerfile
     env_file:
       - .env.demo
@@ -24,10 +33,25 @@ services:
       - .:/app
       - /app/node_modules
     ports:
-      - 5000:5000
-      - 9229:9229
-    command: npm run start:dev
+      - 5001:5000
+    command: npm run start:dev:app
+    restart: on-failure
+
+  hmgs_demo_worker:
+    container_name: hmgs_demo_worker
+    depends_on:
+      - hmgs_demo_postgres
+      - hmgs_demo_redis
+    build:
+      context: .
+      dockerfile: docker/demo/Dockerfile
+    env_file:
+      - .env.demo
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run start:dev:worker
     restart: on-failure
 
 volumes:
-  postgres_demo:
+  hmgs_demo_postgres:

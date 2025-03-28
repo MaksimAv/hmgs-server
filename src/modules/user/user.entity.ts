@@ -30,6 +30,9 @@ export class User extends BaseEntity {
   @Column({ unique: true })
   phone: string;
 
+  @Column({ default: false })
+  isVerified: boolean;
+
   @Column()
   password: string;
 

@@ -18,14 +18,14 @@ export class RoomStatusController {
     const startDate = singleDateSchema.parse(start);
     const endDate = singleDateSchema.parse(end);
     const period: RoomDatesPeriod = { startDate, endDate };
-    return await this.roomStatusService.getByPeriod(roomId, period);
+    return await this.roomStatusService.getManyByPeriod(roomId, period);
   }
 
   @Post(':roomId')
   async set(@Param('roomId') roomId: number, @Body() body: SetRoomStatusDto) {
     const period: RoomDatesPeriod = {
-      startDate: new Date(body.startDate),
-      endDate: new Date(body.endDate),
+      startDate: body.startDate,
+      endDate: body.endDate,
     };
     const status = body.status as unknown as RoomStatusEnum;
     await this.roomStatusService.set(roomId, period, status);

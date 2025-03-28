@@ -11,7 +11,7 @@ import { RoomStatus } from './room-status.entity';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { RoomDatesPeriod } from '../room/types/room';
 import { RoomStatusEnum } from './room-status.enum';
-import { addMinutes, formatISO, isAfter, isBefore, subMinutes } from 'date-fns';
+import { addMinutes, isAfter, isBefore, subMinutes } from 'date-fns';
 import { RoomService } from '../room/room.service';
 
 @Injectable()
@@ -40,7 +40,7 @@ export class RoomStatusService {
     return true;
   }
 
-  async getByPeriod(
+  async getManyByPeriod(
     roomId: number,
     period: RoomDatesPeriod,
   ): Promise<RoomStatus[]> {
@@ -95,12 +95,21 @@ export class RoomStatusService {
     newStatus: RoomStatusEnum,
     manager: EntityManager = this.roomStatusRepository.manager,
   ) {
-    for (const roomStatus of roomStatuses) roomStatus.status = newStatus;
+    for (const roomStatus of roomStatuses) {
+      const isAvailable = this.getAvailabilityStatuses().includes(newStatus);
+      roomStatus.status = newStatus;
+      roomStatus.isAvailable = isAvailable;
+    }
     return await manager.save(roomStatuses);
   }
 
   async updateToBooked(roomStatuses: RoomStatus[], manager: EntityManager) {
     return await this.update(roomStatuses, RoomStatusEnum.BOOKED, manager);
+  }
+
+  async updateToAvailable(roomStatuses: RoomStatus[], manager: EntityManager) {
+    const availableStatus = RoomStatusEnum.AVAILABLE_FOR_BOOKING;
+    return await this.update(roomStatuses, availableStatus, manager);
   }
 
   private async getOverlaps(
@@ -140,7 +149,7 @@ export class RoomStatusService {
         if (isBefore(exist.startDateTime, newPeriod.startDate)) {
           const before = this.roomStatusRepository.create({
             ...exist,
-            endDateTime: formatISO(subMinutes(newPeriod.startDate, 1)),
+            endDateTime: subMinutes(newPeriod.startDate, 1),
             room: { id: roomId },
           });
           newEntries.push(before);
@@ -149,7 +158,7 @@ export class RoomStatusService {
         if (isAfter(exist.endDateTime, newPeriod.endDate)) {
           const after = this.roomStatusRepository.create({
             ...exist,
-            startDateTime: formatISO(addMinutes(newPeriod.endDate, 1)),
+            startDateTime: addMinutes(newPeriod.endDate, 1),
             room: { id: roomId },
           });
           newEntries.push(after);

@@ -21,7 +21,7 @@ export class BookingRoom {
   @ManyToOne(() => Room, (room) => room.bookingRooms)
   room: Room;
 
-  @ManyToOne(() => RoomStatus)
+  @ManyToOne(() => RoomStatus, { onDelete: 'RESTRICT' })
   roomStatus: RoomStatus;
 
   @Column({ type: 'float', default: 0.0 })
