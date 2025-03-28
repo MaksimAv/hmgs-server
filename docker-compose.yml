@@ -30,7 +30,10 @@ services:
     env_file:
       - .env.demo
     volumes:
-      - .:/app
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - ./tsconfig.json:/app/tsconfig.json
       - /app/node_modules
     ports:
       - 5001:5000
@@ -48,7 +51,10 @@ services:
     env_file:
       - .env.demo
     volumes:
-      - .:/app
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - ./tsconfig.json:/app/tsconfig.json
       - /app/node_modules
     command: npm run start:dev:worker
     restart: on-failure
